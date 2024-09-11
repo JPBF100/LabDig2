@@ -14,7 +14,7 @@
     wire [10:0] s_dados;
     wire [10:0] s_saida;
 	 
-	 assign s_paridade = ^dados_ascii; // XOR de todos os bits de dados
+	 assign s_paridade = ~(^dados_ascii); // NXOR de todos os bits de dados
 
     // composicao dos dados seriais
     assign s_dados[0]   = 1'b1;             // repouso
