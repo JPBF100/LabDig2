@@ -8,6 +8,7 @@
  *  Revisoes  :
  *      Data        Versao  Autor             Descricao
  *      07/09/2024  1.0     Edson Midorikawa  versao em Verilog
+ *      12/09/2024  2.0     João Bassetti     Versão completa 
  * --------------------------------------------------------------------------
  */
  
@@ -47,26 +48,19 @@ module interface_hcsr04_uc (
     // Lógica de próximo estado
     always @(*) begin
         case (Eatual)
-            inicial: 
-                /* completar */
+            inicial: Eprox = medir ? preparacao : inicial;
 
-            preparacao: 
-                /* completar */
+            preparacao: Eprox = envia_trigger;
 
-            envia_trigger:
-                /* completar */
+            envia_trigger: Eprox = espera_echo;
 
-            espera_echo: 
-                /* completar */
+            espera_echo: Eprox = echo ? medida : espera_echo;
 
-            medida: 
-                /* completar */
+            medida: Eprox = fim_medida ? armazenamento : medida;
 
-            armazenamento:
-                /* completar */
+            armazenamento: Eprox = Final;
 
-            final_medida: 
-                Eprox = inicial;
+            final_medida: Eprox = inicial;
 
             default: 
                 Eprox = inicial;
@@ -77,6 +71,9 @@ module interface_hcsr04_uc (
     always @(*) begin
         case (Eatual)
             preparacao: zera = 1'b1;
+            final_medida: pronto = 1'b1;
+            armazenamento: registra = 1'b1;
+            envia_trigger: gera = 1'b1;
             default:    zera = 1'b0;
         endcase
 

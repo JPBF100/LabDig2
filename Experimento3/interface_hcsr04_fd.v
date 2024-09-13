@@ -8,6 +8,7 @@
  *  Revisoes  :
  *      Data        Versao  Autor             Descricao
  *      07/09/2024  1.0     Edson Midorikawa  versao em Verilog
+ *      12/09/2024  2.0     Erick DAS         Versão completa 
  * --------------------------------------------------------------------------
  */
  
@@ -28,14 +29,14 @@ module interface_hcsr04_fd (
 
     // (U1) pulso de 10us (??? clocks)
     gerador_pulso #(
-        .largura(/* completar */) 
+        .largura(500) // 500 
     ) U1 (
-        .clock (clock  ),
-        .reset (/* completar */),
-        .gera  (/* completar */),
-        .para  (/* completar */), 
-        .pulso (/* completar */),
-        .pronto(/* completar */)
+        .clock (clock),
+        .reset (zera),
+        .gera  (gera),
+        .para  (1'b1), 
+        .pulso (trigger),
+        .pronto()
     );
 
     // (U2) medida em cm (R=2941 clocks)
@@ -43,14 +44,14 @@ module interface_hcsr04_fd (
         .R(2941), 
         .N(12)
     ) U2 (
-        .clock  (clock         ),
-        .reset  (/* completar */),
-        .pulso  (/* completar */),
+        .clock  (clock),
+        .reset  (zera),
+        .pulso  (pulso),
         .digito2(s_medida[11:8]),
-        .digito1(s_medida[7:4] ),
-        .digito0(s_medida[3:0] ),
-        .fim    (/* completar */),
-        .pronto (/* completar */)
+        .digito1(s_medida[7:4]),
+        .digito0(s_medida[3:0]),
+        .fim    (fim),
+        .pronto (fim_medida)
     );
 
     // (U3) registrador
@@ -58,10 +59,10 @@ module interface_hcsr04_fd (
         .N(12)
     ) U3 (
         .clock  (clock    ),
-        .clear  (/* completar */),
-        .enable (/* completar */),
+        .clear  (zera),
+        .enable (registra),
         .D      (s_medida ),
-        .Q      (/* completar */)
+        .Q      (distancia)
     );
 
 endmodule
