@@ -58,7 +58,7 @@ module interface_hcsr04_uc (
 
             medida: Eprox = fim_medida ? armazenamento : medida;
 
-            armazenamento: Eprox = Final;
+            armazenamento: Eprox = final_medida;
 
             final_medida: Eprox = inicial;
 
@@ -69,13 +69,10 @@ module interface_hcsr04_uc (
 
     // Saídas de controle
     always @(*) begin
-        case (Eatual)
-            preparacao: zera = 1'b1;
-            final_medida: pronto = 1'b1;
-            armazenamento: registra = 1'b1;
-            envia_trigger: gera = 1'b1;
-            default:    zera = 1'b0;
-        endcase
+        zera = (Eatual == preparacao) ? 1'b1 : 1'b0;
+        pronto = (Eatual == final_medida) ? 1'b1 : 1'b0;
+        registra = (Eatual == armazenamento) ? 1'b1 : 1'b0;
+        gera = (Eatual == envia_trigger) ? 1'b1 : 1'b0;
 
         /* completar para outras saidas */
 

@@ -44,7 +44,7 @@ module interface_hcsr04_tb;
     always #(clockPeriod/2) clock_in = ~clock_in;
 
     // Array de casos de teste (estrutura equivalente em Verilog)
-    reg [31:0] casos_teste [0:5]; // Usando 32 bits para acomodar o tempo
+    reg [31:0] casos_teste [0:6]; // Usando 32 bits para acomodar o tempo
     integer caso;
 
     // Largura do pulso

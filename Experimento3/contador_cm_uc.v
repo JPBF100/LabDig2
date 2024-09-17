@@ -29,12 +29,11 @@ module contador_cm_uc (
     reg [2:0] Eatual, Eprox; // 3 bits são suficientes para os estados
 
     // Parâmetros para os estados
-	/* completar */
-    parameter X = 3'b000;
-    parameter Y = 3'b001;
-    parameter Z = 3'b010;
-    parameter W = 3'b011;
-    parameter F = 3'b100;
+    parameter inicial = 3'b000;
+    parameter conta_m = 3'b001;
+    parameter conta_bcd_circ = 3'b010;
+    parameter espera_pulso = 3'b011;
+    parameter fim = 3'b100;
 
     // Memória de estado
     always @(posedge clock, posedge reset) begin
@@ -47,14 +46,21 @@ module contador_cm_uc (
     // Lógica de próximo estado
     always @(*) begin
         case (Eatual)
-            /* completar */
+            inicial: Eprox = espera_pulso;
+            espera_pulso: Eprox = pulso ? conta_m : espera_pulso;
+            conta_m: Eprox = pulso ? (tick ? conta_bcd_circ: conta_m) : fim;
+            conta_bcd_circ: Eprox = pulso ? conta_m : fim;
+            fim: Eprox = inicial;
         endcase
     end
 
     // Lógica de saída (Moore)
     always @(*) begin
-	
-        /* completar */
+        zera_bcd = (Eatual == inicial) ? 1'b1 : 1'b0;
+        zera_tick = (Eatual == inicial) ? 1'b1 : 1'b0;
+        conta_tick = (Eatual == conta_m || Eatual == conta_bcd_circ) ? 1'b1 : 1'b0;
+        conta_bcd = (Eatual == conta_bcd_circ) ? 1'b1 : 1'b0;
+        pronto = (Eatual == fim) ? 1'b1 : 1'b0;
 		
     end
 
