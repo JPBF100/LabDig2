@@ -34,7 +34,7 @@ module interface_hcsr04_fd (
         .clock (clock),
         .reset (zera),
         .gera  (gera),
-        .para  (1'b1), 
+        .para  (1'b0), 
         .pulso (trigger),
         .pronto()
     );
