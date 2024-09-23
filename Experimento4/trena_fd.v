@@ -19,7 +19,9 @@ module trena_fd (
     input wire conta,
     input wire registra, 
     output wire saida_serial,
-    output wire fim
+    output wire fim_medida,
+    output wire fim_envio,
+    output wire medida
 );
 
     // Sinais internos
@@ -27,7 +29,6 @@ module trena_fd (
     wire s_trigger;
     wire [11:0] s_medida;
     wire [6:0] s_ascii;
-    wire [3:0] s_estado;
 
     // Circuito de interface com sensor
     interface_hcsr04 INT (
@@ -37,7 +38,7 @@ module trena_fd (
         .echo     (echo     ),
         .trigger  (s_trigger),
         .medida   (s_medida ),
-        .pronto   (pronto   ),
+        .pronto   (fim_medida   ),
         .db_estado( ) // nao precisa
     );
 
@@ -69,7 +70,7 @@ module trena_fd (
         .partida      (    ), // ativar no estado de enviar algum digito
         .dados_ascii  (s_ascii       ),
         .saida_serial (saida_serial ),
-        .pronto       (fim       ),
+        .pronto       (fim_envio       ),
         .db_clock     (            ), // (desconectado)
         .db_tick      (            ), // (desconectado)
         .db_partida   (            ), // (desconectado)
@@ -80,7 +81,7 @@ module trena_fd (
     // Sinais de saída
     assign trigger = s_trigger;
     assign saida_serial = s_trigger;
-    assign db_estado = s_estado;
+    assign medida = s_medida;
 
 
 endmodule
