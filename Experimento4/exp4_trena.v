@@ -28,20 +28,24 @@ module exp4_trena (
     wire [11:0] s_medida;
     wire s_pronto;
     wire s_fim_envio;
+    wire s_fim_digito;
     wire s_reset;
     wire s_conta;
+    wire s_comeca_medida;
+    wire s_partida;
 
     trena_fd FD (
         .clock(clock),
-        .mensurar(mensurar),
+        .medir(s_comeca_medida),
         .echo(echo),
         .pulso(trigger),
         .zera(s_reset),
-        .conta(1'b1),
-        .registra(1'b1),
+        .conta(s_conta),
+        .partida(s_partida),
         .saida_serial(saida_serial),
         .fim_medida(s_pronto),
         .fim_envio(s_fim_envio),
+        .fim_digito(s_fim_digito),
         .medida(s_medida)
     );
     
@@ -51,12 +55,12 @@ module exp4_trena (
         .mensurar(mensurar),
         .echo(echo),
         .pronto(s_pronto),
-        .fim_digito(trigger),
+        .fim_digito(s_fim_digito),
         .fim_envio(s_fim_envio),
         .zera(s_reset),
         .conta(s_conta),
-        .comeca_medida(FD.mensurar),
-        .fim(FD.fim),
+        .partida(s_partida),
+        .comeca_medida(s_comeca_medida),
         .db_estado(s_estado)
     );
 

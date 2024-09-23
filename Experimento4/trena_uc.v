@@ -20,8 +20,8 @@ module trena_uc (
     input wire       fim_envio,
     output reg       zera,
     output reg       conta,
+    output reg       partida,
     output reg       comeca_medida,
-    output reg       fim,
     output reg [2:0] db_estado 
 );
 
@@ -62,7 +62,7 @@ module trena_uc (
         zera = (Eatual == preparacao || Eatual == inicial) ? 1'b1 : 1'b0;
         comeca_medida = (Eatual == aguarda_medida) ? 1'b1 : 1'b0;
         conta = (Eatual == transmite) ? 1'b1 : 1'b0;
-        fim = (Eatual == final) ? 1'b1 : 1'b0;
+        partida = (Eatual == transmite) ? 1'b1 : 1'b0;
 
         case (Eatual)
             inicial:        db_estado = 3'b000; // 0

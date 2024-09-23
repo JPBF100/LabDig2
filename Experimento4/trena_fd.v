@@ -12,15 +12,16 @@
 
 module trena_fd (
     input wire clock,
-    input wire mensurar,
+    input wire medir,
     input wire echo,
     input wire pulso,
     input wire zera,
     input wire conta,
-    input wire registra, 
+    input wire partida,
     output wire saida_serial,
     output wire fim_medida,
     output wire fim_envio,
+    output wire fim_digito,
     output wire medida
 );
 
@@ -50,7 +51,7 @@ module trena_fd (
         .enp(1'b1),
         .D(2'b00),
         .Q(s_sel_letra),
-        .rco(),    
+        .rco(fim_envio)    
     );
 
     mux_4x1_n #(
@@ -67,10 +68,10 @@ module trena_fd (
     tx_serial_7O1 TX (
         .clock        (clock),
         .reset        (zera), // zerar depois de enviar um digito? ou zerar junto com o reset/zera?
-        .partida      (    ), // ativar no estado de enviar algum digito
+        .partida      (partida), // ativar no estado de enviar algum digito
         .dados_ascii  (s_ascii       ),
         .saida_serial (saida_serial ),
-        .pronto       (fim_envio       ),
+        .pronto       (fim_digito       ),
         .db_clock     (            ), // (desconectado)
         .db_tick      (            ), // (desconectado)
         .db_partida   (            ), // (desconectado)
