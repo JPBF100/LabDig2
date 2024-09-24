@@ -14,20 +14,19 @@ module trena_fd (
     input wire clock,
     input wire medir,
     input wire echo,
-    input wire pulso,
     input wire zera,
     input wire conta,
     input wire partida,
     output wire saida_serial,
+    output wire trigger,
     output wire fim_medida,
     output wire fim_envio,
     output wire fim_digito,
-    output wire medida
+    output wire [11:0] medida
 );
 
     // Sinais internos
-    wire s_sel_letra;
-    wire s_trigger;
+    wire [1:0] s_sel_letra;
     wire [11:0] s_medida;
     wire [6:0] s_ascii;
 
@@ -35,9 +34,9 @@ module trena_fd (
     interface_hcsr04 INT (
         .clock    (clock    ),
         .reset    (zera    ),
-        .medir    (mensurar),
+        .medir    (medir),
         .echo     (echo     ),
-        .trigger  (s_trigger),
+        .trigger  (trigger),
         .medida   (s_medida ),
         .pronto   (fim_medida   ),
         .db_estado( ) // nao precisa
@@ -45,8 +44,8 @@ module trena_fd (
 
     contador_163 CL (
         .clock(clock),
-        .clr(reset),
-        .ld(1'b0),
+        .clr(~zera),
+        .ld(1'b1),
         .ent(conta),
         .enp(1'b1),
         .D(2'b00),
@@ -57,12 +56,12 @@ module trena_fd (
     mux_4x1_n #(
         .BITS(7)
     ) MUX (
-        .entrada0 ({3'b011, s_medida[3:0]}),
-        .entrada1 ({3'b011, s_medida[7:4]}),
-        .entrada2 ({3'b011, s_medida[11:8]}),
-        .entrada3 (7'b0100011), // 35 = 23H = "#" 
-        .selecao  (s_sel_letra),
-        .saida    (s_ascii)
+        .D0 ({3'b011, s_medida[3:0]}),
+        .D1 ({3'b011, s_medida[7:4]}),
+        .D2 ({3'b011, s_medida[11:8]}),
+        .D3 (7'b0100011), // 35 = 23H = "#" 
+        .SEL  (s_sel_letra),
+        .MUX_OUT    (s_ascii)
     );
 
     tx_serial_7O1 TX (
@@ -80,8 +79,6 @@ module trena_fd (
     );
 
     // Sinais de saída
-    assign trigger = s_trigger;
-    assign saida_serial = s_trigger;
     assign medida = s_medida;
 
 
