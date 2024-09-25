@@ -10,7 +10,7 @@
  * --------------------------------------------------------------------------
  */
  
-module exp4_desafio_uc (
+module trena_uc (
     input wire       clock,
     input wire       reset,
     input wire       mensurar,
@@ -38,8 +38,7 @@ module exp4_desafio_uc (
     parameter preparacao       = 3'b001;
     parameter aguarda_medida   = 3'b010;
     parameter transmite        = 3'b011;
-	 parameter conta_caracteres = 3'b111;
-	 parameter timeout          = 3'b110;
+	parameter conta_caracteres = 3'b111;
     parameter espera           = 3'b100;
     parameter finali           = 3'b101;
 
@@ -59,7 +58,7 @@ module exp4_desafio_uc (
             aguarda_medida: Eprox = fim_medida ? transmite : aguarda_medida;
             transmite: Eprox = espera;
             espera: Eprox = fim_digito ? conta_caracteres : espera;
-				conta_caracteres: Eprox = fim_envio ? timeout : transmite;
+			conta_caracteres: Eprox = fim_envio ? timeout : transmite;
             timeout: Eprox = parar ? finali : (fim_timeout ? preparacao : timeout);
             finali: Eprox = inicial;
             default: Eprox = inicial;	
@@ -83,7 +82,7 @@ module exp4_desafio_uc (
             espera:             db_estado = 3'b100; // 4
             finali:             db_estado = 3'b101; // 5
             timeout:            db_estado = 3'b110; // 6 
-		      conta_caracteres:   db_estado = 3'b111; // 7 
+		    conta_caracteres:   db_estado = 3'b111; // 7 
             default:            db_estado = 3'b000; // 0
         endcase
     end

@@ -47,7 +47,7 @@ module exp4_desafio (
     wire s_conta_timeout;
     wire s_fim_timeout;
 
-    exp4_desafio_fd FD (
+    trena_fd FD (
         .clock(clock),
         .medir(s_comeca_medida),
         .echo(echo),
@@ -81,7 +81,7 @@ module exp4_desafio (
         .partida(s_partida),
         .comeca_medida(s_comeca_medida),
         .pronto(pronto),
-        .db_estado(s_estado),
+        .db_estado(s_estado)
     );
 	 
 	edge_detector ED (

@@ -10,7 +10,7 @@
  * --------------------------------------------------------------------------
  */
 
-module exp4_desafio_fd (
+module trena_fd (
     input wire clock,
     input wire medir,
     input wire echo,
