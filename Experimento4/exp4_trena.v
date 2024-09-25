@@ -26,10 +26,12 @@ module exp4_trena (
     output wire [11:0] medidatotal,
     output wire pronto,
     output wire fim_digito,
-    output wire [6:0] db_estado
+    output wire [6:0] db_estado,
+	 output wire [6:0] interface_estado
 );
 
     wire [3:0] s_estado;
+	 wire [3:0] s_interface;
     wire [11:0] s_medida;
     wire s_pronto;
     wire s_fim_envio;
@@ -40,6 +42,7 @@ module exp4_trena (
     wire s_comeca_medida;
     wire s_partida;
     wire s_echo;
+	 wire s_medir;
 
     trena_fd FD (
         .clock(clock),
@@ -53,13 +56,14 @@ module exp4_trena (
         .fim_medida(s_fim_medida),
         .fim_envio(s_fim_envio),
         .fim_digito(s_fim_digito),
-        .medida(s_medida)
+        .medida(s_medida),
+		  .interface_estado(s_interface)
     );
     
     trena_uc UC (
         .clock(clock),
         .reset(reset),
-        .mensurar(mensurar),
+        .mensurar(s_medir),
         .echo(echo),
         .fim_medida(s_fim_medida),
         .fim_digito(s_fim_digito),
@@ -70,6 +74,13 @@ module exp4_trena (
         .comeca_medida(s_comeca_medida),
         .pronto(pronto),
         .db_estado(s_estado)
+    );
+	 
+	edge_detector ED (
+        .clock(clock  ),
+        .reset(reset  ),
+        .sinal(~mensurar), 
+        .pulso(s_medir)
     );
 
     // Displays para medida (4 dígitos BCD)
@@ -90,6 +101,10 @@ module exp4_trena (
     hexa7seg H3 (
         .hexa   ({1'b0, s_estado}), 
         .display(db_estado)
+    );
+	 hexa7seg H4 (
+        .hexa   ({1'b0, s_interface}), 
+        .display(interface_estado)
     );
 
     assign medidatotal = s_medida;

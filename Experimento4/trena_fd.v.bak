@@ -22,25 +22,32 @@ module trena_fd (
     output wire fim_medida,
     output wire fim_envio,
     output wire fim_digito,
-    output wire [11:0] medida,
-	 output wire [3:0] interface_estado
+    output wire [11:0] medida
 );
 
     // Sinais internos
     wire [1:0] s_sel_letra;
     wire [11:0] s_medida;
     wire [6:0] s_ascii;
+    wire s_medir;
 
     // Circuito de interface com sensor
     interface_hcsr04 INT (
         .clock    (clock    ),
         .reset    (zera    ),
-        .medir    (medir),
+        .medir    (s_medir),
         .echo     (echo     ),
         .trigger  (trigger),
         .medida   (s_medida ),
         .pronto   (fim_medida   ),
-        .db_estado(interface_estado ) // nao precisa
+        .db_estado( ) // nao precisa
+    );
+
+    edge_detector ED (
+        .clock(clock  ),
+        .reset(zera  ),
+        .sinal(medir  ), 
+        .pulso(s_medir)
     );
 
     contador_163 CL (
@@ -57,9 +64,9 @@ module trena_fd (
     mux_4x1_n #(
         .BITS(7)
     ) MUX (
-        .D2 ({3'b011, s_medida[3:0]}),
+        .D0 ({3'b011, s_medida[3:0]}),
         .D1 ({3'b011, s_medida[7:4]}),
-        .D0 ({3'b011, s_medida[11:8]}),
+        .D2 ({3'b011, s_medida[11:8]}),
         .D3 (7'b0100011), // 35 = 23H = "#" 
         .SEL  (s_sel_letra),
         .MUX_OUT    (s_ascii)

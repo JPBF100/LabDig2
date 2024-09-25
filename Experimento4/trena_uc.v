@@ -31,12 +31,13 @@ module trena_uc (
     reg [2:0] Eatual, Eprox;
 
     // Parâmetros para os estados
-    parameter inicial        = 3'b000;
-    parameter preparacao     = 3'b001;
-    parameter aguarda_medida = 3'b010;
-    parameter transmite      = 3'b011;
-    parameter espera         = 3'b100;
-    parameter finali          = 3'b101;
+    parameter inicial          = 3'b000;
+    parameter preparacao       = 3'b001;
+    parameter aguarda_medida   = 3'b010;
+    parameter transmite        = 3'b011;
+	 parameter conta_caracteres = 3'b111;
+    parameter espera           = 3'b100;
+    parameter finali           = 3'b101;
 
     // Estado
     always @(posedge clock, posedge reset) begin
@@ -52,10 +53,11 @@ module trena_uc (
             inicial: Eprox = mensurar ? preparacao : inicial;
             preparacao: Eprox = aguarda_medida;
             aguarda_medida: Eprox = fim_medida ? transmite : aguarda_medida;
-            transmite: Eprox = fim_envio ? finali : espera;
-            espera: Eprox = fim_digito ? transmite : espera;
+            transmite: Eprox = espera;
+            espera: Eprox = fim_digito ? conta_caracteres : espera;
+				conta_caracteres: Eprox = fim_envio ? finali : transmite;
             finali: Eprox = inicial;
-            default: Eprox = inicial;
+            default: Eprox = inicial;	
         endcase
     end
 
@@ -63,7 +65,7 @@ module trena_uc (
     always @(*) begin
         zera = (Eatual == preparacao || Eatual == inicial) ? 1'b1 : 1'b0;
         comeca_medida = (Eatual == aguarda_medida) ? 1'b1 : 1'b0;
-        conta = (Eatual == transmite) ? 1'b1 : 1'b0;
+        conta = (Eatual == conta_caracteres) ? 1'b1 : 1'b0;
         partida = (Eatual == transmite) ? 1'b1 : 1'b0;
         pronto = (Eatual == finali) ? 1'b1 : 1'b0;
 
@@ -74,7 +76,8 @@ module trena_uc (
             transmite:      db_estado = 3'b011; // 3
             espera:         db_estado = 3'b100; // 4
             finali:         db_estado = 3'b101; // 5 
-            default:        db_estado = 3'b111; // 7
+				conta_caracteres: db_estado = 3'b111; // 7 
+            default:        db_estado = 3'b110; // 6
         endcase
     end
 
