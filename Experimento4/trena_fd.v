@@ -29,17 +29,25 @@ module trena_fd (
     wire [1:0] s_sel_letra;
     wire [11:0] s_medida;
     wire [6:0] s_ascii;
+    wire s_medir;
 
     // Circuito de interface com sensor
     interface_hcsr04 INT (
         .clock    (clock    ),
         .reset    (zera    ),
-        .medir    (medir),
+        .medir    (s_medir),
         .echo     (echo     ),
         .trigger  (trigger),
         .medida   (s_medida ),
         .pronto   (fim_medida   ),
         .db_estado( ) // nao precisa
+    );
+
+    edge_detector ED (
+        .clock(clock  ),
+        .reset(zera  ),
+        .sinal(medir  ), 
+        .pulso(s_medir)
     );
 
     contador_163 CL (
