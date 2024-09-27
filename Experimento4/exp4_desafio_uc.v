@@ -59,7 +59,7 @@ module exp4_desafio_uc (
             aguarda_medida: Eprox = fim_medida ? transmite : aguarda_medida;
             transmite: Eprox = espera;
             espera: Eprox = fim_digito ? conta_caracteres : espera;
-				conta_caracteres: Eprox = fim_envio ? timeout : transmite;
+			conta_caracteres: Eprox = fim_envio ? timeout : transmite;
             timeout: Eprox = parar ? finali : (fim_timeout ? preparacao : timeout);
             finali: Eprox = inicial;
             default: Eprox = inicial;	

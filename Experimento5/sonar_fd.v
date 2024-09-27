@@ -1,17 +1,3 @@
-/*
-* EXISTE AQUI UMA GRANDE DIFERENÇA EM RELAÇÃO AO PROJETO DA EXP 4,
-* POIS AQUI A ENTRADA DO MUX TAMBEM TEM QUE TER A SAIDA DA ROM.
-* ACHO QUE O IDEAL EH QUE O MUX TENHA NO MÍNIMO 7 ENTRADAS (3 BITS),
-* SENDO QUE 4 DELAS SÃO DA MEDIDA (SAÍDA DO SENSOR DE DISTÂNCIA)
-* UMA A VÍRGULA, OUTRA A HASHTAG E UMA A SAÍDA DA ROM. A ÚLTIMA 
-* ENTRADA NÃO IMPORTA, PODE SER A HASHTAG MESMO.
-*
-* TL;DR: O CÓDIGO TÁ ERRADO, PRINCIPALMENTE O MUX E A ROM.
-*/
-
-
-
-
 module sonar_fd (
     input clock,
     input zera,
@@ -19,23 +5,27 @@ module sonar_fd (
     input medir,
     input conta_digito,
     input conta_timeout,
-    input partida,
+    input conta_angulo,
+    input comeca_transmissao,
     output trigger,
     output fim_medida,
     output fim_envio,
     output fim_digito,
     output fim_timeout,
     output saida_serial,
+    output ultimo_angulo,
+    output pwm,
 );
 
 wire [11:0] s_medida;
-wire [3:0] s_sel_letra;
+wire [2:0] s_sel_letra;
 wire [6:0] s_ascii;
-wire [23:0]s_angulo;
+wire [2:0] s_end;
+wire [23:0] s_angulo;
 
     rom_angulos_8x24 ROM (
-        .endereco(),
-        .saida()
+        .endereco(s_end),
+        .saida(s_angulo)
     );
 
     contador_m #(
@@ -51,6 +41,16 @@ wire [23:0]s_angulo;
         .meio    (     )  // porta meio em aberto (desconectada)
     );
 
+    controle_servo_3 CS (
+        .clock   (clock),
+        .reset   (zera), // nunca vai usar, eu acho
+        .posicao (s_end),
+        .controle(pwm),
+        .db_reset(     ), // (desconectado)
+        .db_posicao(   ), // (desconectado)
+        .db_controle(  ) // (desconectado)
+    );
+
     interface_hcsr04 INT (
         .clock    (clock    ),
         .reset    (zera    ),
@@ -62,7 +62,7 @@ wire [23:0]s_angulo;
         .db_estado( ) // pode usar como debug
     );
 
-    contador_163 CL (
+    contador_163 CONTA_MUX (
         .clock(clock),
         .clr(~zera),
         .ld(1'b1),
@@ -73,16 +73,28 @@ wire [23:0]s_angulo;
         .rco(fim_envio)    
     );
 
-    mux_4x1_n #(
+    contador_163 CONTA_ANGULO (
+        .clock(clock),
+        .clr(~zera),
+        .ld(1'b1),
+        .ent(conta_angulo),
+        .enp(1'b1),
+        .D(3'b000),
+        .Q(s_end),
+        .rco(ultimo_angulo) // coloquei isso pra servir como debug, acho que nao vai precisar    
+    );
+
+    mux_8x1_n #(
         .BITS(7)
     ) MUX (
-        .D6 ({3'b011, s_medida[3:0]}),  
-        .D5 ({3'b011, s_medida[7:4]}),  
-        .D4 ({3'b011, s_medida[11:8]}),  
+        .D0 (s_angulo[23:16]), // primeiro digito do angulo
+        .D1 (s_angulo[15:8]), // segundo digito do angulo
+        .D2 (s_angulo[7:0]), // terceito digito do angulo
         .D3 (7'b0101100), // 44 = 2CH = ","  
-        .D2 (7'b0100011), // 35 = 23H = "#"
-        .D1 (), // angulo
-        .D0 (), // angulo
+        .D4 ({3'b011, s_medida[11:8]}), // primeiro digito da medida  
+        .D5 ({3'b011, s_medida[7:4]}), // segundo digito da medida  
+        .D6 ({3'b011, s_medida[3:0]}), // terceiro digito da medida  
+        .D7 (7'b0100011), // 35 = 23H = "#"
         .SEL  (s_sel_letra),
         .MUX_OUT    (s_ascii)
     );
@@ -90,7 +102,7 @@ wire [23:0]s_angulo;
     tx_serial_7O1 TX (
         .clock        (clock),
         .reset        (zera), 
-        .partida      (partida), 
+        .partida      (comeca_transmissao), 
         .dados_ascii  (s_ascii       ),
         .saida_serial (saida_serial ),
         .pronto       (fim_digito       ),
