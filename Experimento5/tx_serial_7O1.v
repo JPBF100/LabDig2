@@ -36,8 +36,6 @@ module tx_serial_7O1 (
 );
 
     wire       s_reset        ;
-    wire       s_partida      ;
-    wire       s_partida_ed   ;
     wire       s_zera         ;
     wire       s_conta        ;
     wire       s_carrega      ;
@@ -69,7 +67,7 @@ module tx_serial_7O1 (
     tx_serial_uc U2_UC (
         .clock     ( clock        ),
         .reset     ( s_reset      ),
-        .partida   ( s_partida_ed ),
+        .partida   ( partida ),
         .tick      ( s_tick       ),
         .fim       ( s_fim        ),
         .zera      ( s_zera       ),
@@ -101,7 +99,7 @@ module tx_serial_7O1 (
     // depuracao
     assign db_clock        = clock;
     assign db_tick         = s_tick;
-    assign db_partida      = s_partida;
+    assign db_partida      = partida;
     assign db_saida_serial = s_saida_serial;
   
 

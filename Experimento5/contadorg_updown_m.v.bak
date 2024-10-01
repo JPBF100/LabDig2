@@ -14,7 +14,7 @@ module contadorg_updown_m #(
     output reg     inicio,
     output reg     fim,
     output reg     meio,
-    output wire    direcao
+    output reg     direcao
 );
 
     reg [N-1:0] IQ; 

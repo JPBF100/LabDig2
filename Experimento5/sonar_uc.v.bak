@@ -10,7 +10,7 @@
  * --------------------------------------------------------------------------
  */
  
-module sonar_uc (
+module exp4_desafio_uc (
     input wire       clock,
     input wire       reset,
     input wire       ligar,
@@ -21,7 +21,7 @@ module sonar_uc (
     output reg       zera,
     output reg       conta_digito,
     output reg       conta_timeout,
-    output reg       conta_angulo,        
+    ontput reg       conta_angulo,        
     output reg       comeca_transmissao,
     output reg       comeca_medida,
     output reg       pronto,
@@ -73,7 +73,7 @@ module sonar_uc (
     // Saídas de controle
     always @(*) begin
         zera = (Eatual == inicial || Eatual == preparacao) ? 1'b1 : 1'b0;
-        conta_timeout = (Eatual == posiciona_servo) ? 1'b1 : 1'b0;
+        conta_timeout = (Eatual == timeout) ? 1'b1 : 1'b0;
         conta_digito = (Eatual == conta_caracteres) ? 1'b1 : 1'b0;
         conta_angulo = (Eatual == reposiciona) ? 1'b1 : 1'b0;
         comeca_medida = (Eatual == aguarda_medida) ? 1'b1 : 1'b0;
@@ -86,7 +86,7 @@ module sonar_uc (
             preparacao:        db_estado = 4'b0001; // 1
             posiciona_servo:   db_estado = 4'b0010; // 2
             prepara_medida:    db_estado = 4'b0011; // 3
-            reposiciona:       db_estado = 4'b0100; // 4
+            reposiciona:       db_estad0 = 4'b0100; // 4
             transmite:         db_estado = 4'b0101; // 5
             aguarda_medida:    db_estado = 4'b1010; // A
 		    conta_caracteres:  db_estado = 4'b1100; // C 

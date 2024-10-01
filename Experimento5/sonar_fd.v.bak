@@ -14,7 +14,7 @@ module sonar_fd (
     output fim_timeout,
     output saida_serial,
     output ultimo_angulo,
-    output pwm
+    output pwm,
 );
 
 wire [11:0] s_medida;
@@ -29,7 +29,7 @@ wire [23:0] s_angulo;
     );
 
     contador_m #(
-        .M(100000), // 100000000 = 2s em um clock de 50MHz
+        .M(100000000), // 100000000 = 2s em um clock de 50MHz
         .N(27)
     ) U2 (
         .clock   (clock),

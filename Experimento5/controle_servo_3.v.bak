@@ -9,7 +9,7 @@ module controle_servo_3 (
 );
 
 
-	circuito_pwm_3 #(           
+	circuito_pwm #(           
         .conf_periodo(1000000), 
         .largura_000  (35000),  
         .largura_001  (45700),  
