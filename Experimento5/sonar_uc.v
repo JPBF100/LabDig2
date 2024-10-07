@@ -18,6 +18,7 @@ module sonar_uc (
     input wire       fim_digito,
     input wire       fim_envio,
     input wire       fim_timeout,
+	 input wire       silencio,
     output reg       zera,
     output reg       conta_digito,
     output reg       conta_timeout,
@@ -39,8 +40,8 @@ module sonar_uc (
     parameter posiciona_servo  = 4'b0010; // 2
     parameter prepara_medida   = 4'b0011; // 3
     parameter reposiciona      = 4'b0100; // 4
-	parameter transmite        = 4'b0101; // 5
-	parameter aguarda_medida   = 4'b1010; // A
+	 parameter transmite        = 4'b0101; // 5
+	 parameter aguarda_medida   = 4'b1010; // A
     parameter conta_caracteres = 4'b1100; // C
     parameter espera           = 4'b1110; // E
     parameter finali           = 4'b1111; // F
@@ -60,10 +61,10 @@ module sonar_uc (
             preparacao: Eprox = posiciona_servo;
             posiciona_servo: Eprox = ligar ? (fim_timeout ? prepara_medida : posiciona_servo) : finali;
             prepara_medida: Eprox = aguarda_medida;
-            aguarda_medida: Eprox = fim_medida ? transmite : aguarda_medida;
+            aguarda_medida: Eprox = fim_medida ? (silencio ? reposiciona : transmite) : aguarda_medida;
             transmite: Eprox = espera;
             espera: Eprox = fim_digito ? conta_caracteres : espera;
-			conta_caracteres: Eprox = fim_envio ? reposiciona : transmite;
+			   conta_caracteres: Eprox = fim_envio ? reposiciona : transmite;
             reposiciona: Eprox = posiciona_servo;
             finali: Eprox = inicial;
             default: Eprox = inicial;	
@@ -89,7 +90,7 @@ module sonar_uc (
             reposiciona:       db_estado = 4'b0100; // 4
             transmite:         db_estado = 4'b0101; // 5
             aguarda_medida:    db_estado = 4'b1010; // A
-		    conta_caracteres:  db_estado = 4'b1100; // C 
+		      conta_caracteres:  db_estado = 4'b1100; // C 
             espera:            db_estado = 4'b1110; // E 
             finali:            db_estado = 4'b1111; // F 
             default:           db_estado = 4'b1011; // B

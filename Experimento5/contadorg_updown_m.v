@@ -20,7 +20,7 @@ module contadorg_updown_m #(
     reg [N-1:0] IQ; 
     reg         dir;
 
-    always @(posedge clock, posedge zera_as, posedge zera_s) begin
+    always @(posedge clock, posedge zera_as) begin
         if (zera_as) begin
             IQ  <= 0;
             dir <= 0;

@@ -18,6 +18,8 @@ module interface_hcsr04_fd (
     input wire         zera,
     input wire         gera,
     input wire         registra,
+	 input wire         conta_echo,
+	 output wire        fim_echo,
     output wire        fim_medida,
     output wire        trigger,
     output wire        fim,
@@ -53,11 +55,24 @@ module interface_hcsr04_fd (
         .fim    (fim),
         .pronto (fim_medida)
     );
+	 
+	 	 contador_m #(
+        .M(100000000), // 100000000 = 2s em um clock de 50MHz
+        .N(27)
+    ) U3 (
+        .clock   (clock),
+        .zera_as (1'b0 ),
+        .zera_s  (zera ),
+        .conta   (conta_echo),
+        .Q       (     ), // porta Q em aberto (desconectada)
+        .fim     (fim_echo  ),
+        .meio    (     )  // porta meio em aberto (desconectada)
+    );
 
     // (U3) registrador
     registrador_n #(
         .N(12)
-    ) U3 (
+    ) U9 (
         .clock  (clock    ),
         .clear  (zera),
         .enable (registra),

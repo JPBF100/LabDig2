@@ -18,6 +18,8 @@ module interface_hcsr04_uc (
     input wire       medir,
     input wire       echo,
     input wire       fim_medida,
+	 input wire       fim_echo,
+	 output reg       conta_echo,
     output reg       zera,
     output reg       gera,
     output reg       registra,
@@ -54,7 +56,7 @@ module interface_hcsr04_uc (
 
             envia_trigger: Eprox = espera_echo;
 
-            espera_echo: Eprox = echo ? medida : espera_echo;
+            espera_echo: Eprox = fim_echo ? preparacao : (echo ? medida : espera_echo);
 
             medida: Eprox = fim_medida ? armazenamento : medida;
 
@@ -73,6 +75,7 @@ module interface_hcsr04_uc (
         pronto = (Eatual == final_medida) ? 1'b1 : 1'b0;
         registra = (Eatual == armazenamento) ? 1'b1 : 1'b0;
         gera = (Eatual == envia_trigger) ? 1'b1 : 1'b0;
+		  conta_echo = (Eatual == espera_echo) ? 1'b1 : 1'b0;
 
         /* completar para outras saidas */
 

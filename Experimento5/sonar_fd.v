@@ -14,7 +14,9 @@ module sonar_fd (
     output fim_timeout,
     output saida_serial,
     output ultimo_angulo,
-    output pwm
+    output pwm,
+	 output [11: 0] medida,
+	 output [3:0] db_estado
 );
 
 wire [11:0] s_medida;
@@ -29,7 +31,7 @@ wire [23:0] s_angulo;
     );
 
     contador_m #(
-        .M(100000), // 100000000 = 2s em um clock de 50MHz
+        .M(100000000), // 100000000 = 2s em um clock de 50MHz
         .N(27)
     ) U2 (
         .clock   (clock),
@@ -59,7 +61,7 @@ wire [23:0] s_angulo;
         .trigger  (trigger),
         .medida   (s_medida ),
         .pronto   (fim_medida   ),
-        .db_estado( ) // pode usar como debug
+        .db_estado( db_estado ) // pode usar como debug
     );
 
     contador_163 CONTA_MUX (
@@ -73,16 +75,31 @@ wire [23:0] s_angulo;
         .rco(fim_envio)    
     );
 
-    contador_163 CONTA_ANGULO (
-        .clock(clock),
-        .clr(~zera),
-        .ld(1'b1),
-        .ent(conta_angulo),
-        .enp(1'b1),
-        .D(3'b000),
-        .Q(s_end),
-        .rco(ultimo_angulo) // coloquei isso pra servir como debug, acho que nao vai precisar    
-    );
+//    contador_163 CONTA_ANGULO (
+//        .clock(clock),
+//        .clr(~zera),
+//        .ld(1'b1),
+//        .ent(conta_angulo),
+//        .enp(1'b1),
+//        .D(3'b000),
+//        .Q(s_end),
+//        .rco(ultimo_angulo) // coloquei isso pra servir como debug, acho que nao vai precisar    
+//    );
+	 
+	 contadorg_updown_m #(
+        .M(8),
+		  .N(3)
+    ) CONTA_ANGULO (
+			.clock(clock),   
+         .zera_as(zera),
+         .zera_s(),
+         .conta(conta_angulo),
+			.Q(s_end),
+			.inicio(),
+		   .fim(ultimo_angulo),
+		   .meio(),
+		   .direcao()
+	 );
 
     mux_8x1_n #(
         .BITS(7)
@@ -112,6 +129,8 @@ wire [23:0] s_angulo;
         .db_saida_serial (          ), // (desconectado)
         .db_estado    (     ) // (desconectado)
     );
+
+assign medida = s_medida;
 
 
 endmodule
