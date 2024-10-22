@@ -4,7 +4,7 @@ module sonar_mux (
     input ligar,
     input echo,
 	input silencio,
-    input [1:0] sel_display,
+    input sel_display,
     output wire trigger,
     output wire pwm,
     output wire saida_serial,
@@ -56,7 +56,7 @@ sonar_fd_mux FD (
     .ultimo_angulo(), // pode usar como debug
     .pwm(pwm),
 	 .medida(s_medida),
-	 .db_estado(s_interface),
+	 .db_estado(s_interface)
      .angulo(s_angulo)
 );
 
@@ -89,7 +89,7 @@ sonar_uc UC (
         .D0({s_medida[3:0], s_medida[7:4], s_medida[11:8], 4'b0000, s_interface, s_estado}),
         .SEL(sel_display),
         .MUX_OUT(s_mux_displays)
-    );
+    )
 
     hexa7seg H5 (
         .hexa   (s_mux_displays[23:20]), 
