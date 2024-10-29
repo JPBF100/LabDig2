@@ -46,22 +46,32 @@ module SGA_FD (
     input         count_apple_counter,
     input         register_eat_apple,
     input         reset_eat_apple,
-    output        self_collision_on,
+    input         medir,
+    input         echo_esq,
+    input         echo_dir,
     output        self_collision,
     output        render_finish,
     output [5:0]  db_tamanho,
     output [5:0]  db_apple,
     output [5:0]  db_head,
-    output chosen_play_time,
-    output end_move,
-	  output end_wait_time,
-    output chosen_difficulty,
-    output played,
-    output wall_collision,
-    output maca_na_cobra,
-	  output comeu_maca,
-    output comeu_maca_esp
+    output        chosen_play_time,
+    output        end_move,
+	  output        end_wait_time,
+    output        chosen_difficulty,
+    output        played,
+    output        wall_collision,
+    output        maca_na_cobra,
+	  output        comeu_maca,
+    output        comeu_maca_esp,
+    output        fim_medida_esq,
+    output        fim_medida_dir,
+    output        dir,
+    output        esq,
+    output wire   trigger_esq,
+    output wire   trigger_dir   
 );
+
+  // Fiação
 
 	  wire [5:0] s_size;
     wire [5:0] s_address;
@@ -84,21 +94,22 @@ module SGA_FD (
     wire w_end_play_time_half;
     wire w_win_game;
     wire w_win_easy_game;
-    wire w_self_collision_on_1;
-    wire w_self_collision_on_2;
     wire w_dificuldade;
     wire w_mode;
     wire [5:0] w_apple;
     wire [5:0] s_appleposition;
     wire w_velocity;
     wire w_wall_collision;
+    wire [11:0] s_medida_esq;
+    wire [11:0] s_medida_dir;
 
+    // Início do código
 
-    assign sinal = buttons[0] | buttons [1] | buttons[2] | buttons [3];  
-    assign chosen_play_time = !w_velocity ? w_end_play_time : w_end_play_time_half;
-    assign chosen_difficulty = w_dificuldade ? w_win_game : w_win_easy_game;
+    assign sinal = buttons[0] | buttons [1] | buttons[2] | buttons [3];  // Lê entrada do botão
+    assign chosen_play_time = !w_velocity ? w_end_play_time : w_end_play_time_half; // Define tempo total do jogo
+    assign chosen_difficulty = w_dificuldade ? w_win_game : w_win_easy_game; // Define a dificuldade do jogo
     
-    // contador_163
+    // contadores
     contador_163 snake_size (
       .clock    ( clock ),
       .clr      ( ~clear_size ), 
@@ -108,8 +119,8 @@ module SGA_FD (
       .D        ( 6'b000001 ), 
       .Q        ( s_size ),
       .rco      ( w_win_game ),
-      .half_rco ( w_win_easy_game)
-    );
+      .half_rco ( w_win_easy_game )
+    ); // Tamanho da cobra
 
     contador_163 render_component (
       .clock( clock ),
@@ -146,13 +157,7 @@ module SGA_FD (
       .rco  (  )
     );
 
-    LFSR new_apple(
-      .clk(clock),
-      .rst(restart),
-      .out(s_new_apple)
-    );
-
-    contador_m #( .M(8500), .N(20) ) contador_de_jogada (
+    contador_m #( .M(40000000), .N(26) ) contador_de_jogada (
       .clock  ( clock ),
       .zera_as( restart ),
       .zera_s ( render_count | zera_counter_play_time ),
@@ -161,7 +166,7 @@ module SGA_FD (
       .fim    ( w_end_play_time ),
       .meio   ( w_end_play_time_half ),
       .quarto ()
-    );
+    ); // Tempo de uma rodada
 	 
 	  contador_m #( .M(2000), .N(20) ) contador_de_comeu_maca (
       .clock  ( clock ),
@@ -172,66 +177,69 @@ module SGA_FD (
       .fim    ( end_wait_time ),
       .meio   (  ),
       .quarto ()
-    );
+    ); // Tempo que deixa o sinal comeu_maça ativo
+
+    // Registradores
 
     assign w_new_apple = mux_apple ? s_appleposition : s_new_apple;
 
-    registrador_6 apple_position (
+    registrador_n #( .N(6) ) apple_position (
         .clock ( clock ),
         .clear ( reset_apple ),
         .enable ( register_apple ),
         .D ( w_new_apple ),
         .Q ( s_apple )
-    );
+    ); // Posição da Maça
 
-    registrador_6 head_position (
+    registrador_n #( .N(6) ) head_position (
         .clock ( clock ),
         .clear ( reset_head ),
         .enable ( register_head ),
         .D ( s_position ),
         .Q ( head )
-    );
+    ); // Posição da Cabeça
 
-    registrador_1 game_mode (
+    registrador_n #( .N(1) ) game_mode (
         .clock ( clock ),
         .clear ( reset_game_parameters ),
         .enable ( register_game_parameters ),
         .D ( mode ),
         .Q ( w_mode )
-    );
+    ); // Modo com e sem Parede
 
-    registrador_1 eat_apple (
+    registrador_n #( .N(1) ) eat_apple (
         .clock ( clock ),
         .clear ( reset_eat_apple ),
         .enable ( register_eat_apple ),
         .D ( comeu_maca ),
         .Q ( comeu_maca_esp )
-    );
+    ); // Registro do pulso comeu maça
     
-    registrador_1 dificuldade (
+    registrador_n #( .N(1) ) dificuldade (
         .clock ( clock ),
         .clear ( reset_game_parameters ),
         .enable ( register_game_parameters ),
         .D ( difficulty ),
         .Q ( w_dificuldade )
-    );
+    ); // Muda a dificuldade do jogo
 
-    registrador_1 velocidade (
+    registrador_n #( .N(1) ) velocidade (
         .clock ( clock ),
         .clear ( reset_game_parameters ),
         .enable ( register_game_parameters ),
         .D ( velocity ),
         .Q ( w_velocity )
-    );
-
+    ); // Muda a velocidade do jogo
+ 
     edge_detector detector (
       .clock( clock ),
       .reset( restart ),
       .sinal( sinal ),
       .pulso( played )
-    );
+    ); // Edge para os botões
 	 
-	 // comparador_85
+	 // comparadoradores
+
     comparador_85 render_comparator (
       .A   ( s_size ),
       .B   ( s_render_count ),
@@ -254,7 +262,7 @@ module SGA_FD (
       .AEBo( end_move )
     );
 	 
-	 comparador_85 comparador_comeu_maca (
+	  comparador_85 comparador_comeu_maca (
       .A   ( s_apple ),
       .B   ( newHead ),
       .ALBi( 1'b0 ), 
@@ -278,19 +286,6 @@ module SGA_FD (
       .AEBo( maca_na_cobra )
     );
 
-    comparador_85 comparator_self_collision_on (
-      .A   ( 6'b000100 ),
-      .B   ( s_size ),
-      .ALBi( 1'b0 ), 
-      .AGBi( 1'b0 ),
-      .AEBi( 1'b1 ),
-      .ALBo( w_self_collision_on_2), 
-      .AGBo(  ),
-      .AEBo( w_self_collision_on_1 )
-    );
-
-    assign self_collision_on = w_self_collision_on_1 | w_self_collision_on_2;
-
     comparador_85 comparator_self_collision (
       .A   ( head ),
       .B   ( s_position ),
@@ -302,6 +297,8 @@ module SGA_FD (
       .AEBo( self_collision )
     );
 
+    // Deteca colisão com a aprede
+
     wall_coliser detector_collision
     (
       .head(s_position),
@@ -311,7 +308,17 @@ module SGA_FD (
       .colide( w_wall_collision )
     );
 
-    assign wall_collision = w_wall_collision & w_mode;
+    assign wall_collision = w_wall_collision & w_mode; // Modo colisão
+
+    // Geração aleatória de maça
+
+    LFSR new_apple(
+      .clk(clock),
+      .rst(restart),
+      .out(s_new_apple)
+    );
+
+    // Corpo da Cobra (Memória RAM)
 
     assign  dataRAM = mux_ram ? s_position : newHead;
     assign  addresRAM = mux_ram_addres ? (s_address + 6'b000001): s_address;
@@ -330,6 +337,8 @@ module SGA_FD (
 		  .restart(restart)
     );
 
+    // Define nova posição da cabeça
+
     assign headXsoma = {head[5:3] , head[2:0] + 3'b001} ;
     assign headXsubtrai = {head[5:3], head[2:0] - 3'b001} ;
     assign headYSoma = {head[5:3] + 3'b001 , head[2:0]} ;
@@ -343,6 +352,39 @@ module SGA_FD (
       .SEL(direction),
       .OUT(newHead)
     );
+
+    // Sensor echo
+    
+    interface_hcsr04 INTESQ (
+        .clock    (clock),
+        .reset    ( restart ),
+        .medir    ( medir ),
+        .echo     ( echo_esq ),
+        .trigger  ( trigger_esq ),
+        .medida   ( s_medida_esq ),
+        .pronto   ( fim_medida_esq ),
+        .db_estado(  ) // pode usar como debug
+    );
+    
+    interface_hcsr04 INTDIR (
+        .clock    ( clock ),
+        .reset    ( restart ),
+        .medir    ( medir ),
+        .echo     ( echo_dir ),
+        .trigger  ( trigger_dir ),
+        .medida   ( s_medida_dir ),
+        .pronto   (fim_medida_dir),
+        .db_estado(  ) // pode usar como debug
+    );
+
+    comparador_proximidade PROX (
+      .medida_esq( s_medida_esq ),
+      .medida_dir( s_medida_dir ),
+      .dir( dir ),
+      .esq( esq )
+    );
+
+  // Depuração
 
   assign db_apple = s_apple;
   assign db_tamanho = s_size;

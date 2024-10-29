@@ -14,26 +14,32 @@
 
 
 module SGA (
- input          clock,
- input          [3:0] buttons,
- input          start,
- input          restart,
- input          pause,
- input          difficulty,
- input          mode,
- input          velocity,
- output         [5:0] db_size, 
- output         [6:0] db_state,
- output         [6:0] db_state2,
- output         [6:0] db_headX,
- output         [6:0] db_headY,
- output         [6:0] db_appleX,
- output         [6:0] db_appleY,
- output         [1:0] direction,
- output         won,
- output         lost,
- output wire    saida_serial,
- output		    comeu_maca
+    input           clock,
+    input [3:0]     buttons,
+    input           start,
+    input           restart,
+    input           pause,
+    input           difficulty,
+    input           mode,
+    input           velocity,
+    input           echo_esq,
+    input           echo_dir,
+    output [5:0]    db_size, 
+    output [6:0]    db_state,
+    output [6:0]    db_state2,
+    output [6:0]    db_headX,
+    output [6:0]    db_headY,
+    output [6:0]    db_appleX,
+    output [6:0]    db_appleY,
+    output [1:0]    direction,
+    output          won,
+    output          lost,
+    output          dir,
+    output          esq,
+    output wire     saida_serial,
+    output		    comeu_maca,
+    output wire     trigger_esq,
+    output wire     trigger_dir   
 );
 
 wire w_clr_size;
@@ -85,6 +91,13 @@ wire s_conta_digito;
 wire s_fim_envio;
 wire s_fim_digito;
 wire s_comeca_transmissao;
+wire s_inicio_transmissao;
+wire [1:0] s_estado_transmissao;
+wire s_clr;
+
+wire s_fim_medida_dir;
+wire s_fim_medida_esq;
+wire s_medir;
 
 // Circuito Principal
 
@@ -130,13 +143,21 @@ wire s_comeca_transmissao;
         .comeu_maca_esp(w_comeu_maca_esp),
         .wall_collision(w_wall_collision),
         .self_collision(w_self_collision),
-        .self_collision_on(w_self_collision_on),
         .chosen_difficulty(w_win_game),
         .zera_counter_play_time(w_zera_counter_play_time),
         .register_game_parameters(w_register_game_parameters),
         .reset_game_parameters(w_reset_game_parameters),
         .maca_na_cobra(w_maca_na_cobra),
-        .recharge(w_recharge)
+        .recharge(w_recharge),
+        .medir(s_medir),
+        .fim_medida_dir(s_fim_medida_dir),
+        .fim_medida_esq(s_fim_medida_esq),
+        .echo_esq(echo_esq),
+        .echo_dir(echo_dir),
+        .trigger_esq(trigger_esq),
+        .trigger_dir(trigger_dir),
+        .dir(dir),
+        .esq(esq)
     );
 
 	SGA_UC UC(
@@ -165,10 +186,10 @@ wire s_comeca_transmissao;
         .load_size(w_load_size),
         .count_play_time(w_count_play_time),
         .db_state(s_estado),
-        .left(buttons[3]),
-        .right(buttons[0]),
-        .up(buttons[2]),
-        .down(buttons[1]),
+        .left(~buttons[3]), // Tá negado pois botões na FPGA
+        .right(~buttons[0]), // Tá negado pois botões na FPGA
+        .up(~buttons[2]), // Tá negado pois botões na FPGA
+        .down(~buttons[1]), // Tá negado pois botões na FPGA
         .played(w_played),
         .direction(w_direction),
 		.end_wait_time(w_end_wait_time),
@@ -180,9 +201,8 @@ wire s_comeca_transmissao;
         .wall_collision(w_wall_collision),
 		.comeu_maca(w_comeu_maca),
         .self_collision(w_self_collision),
-        .self_collision_on(w_self_collision_on),
         .win_game(w_win_game),
-        .pause(~pause),
+        .pause(pause),
         .zera_counter_play_time(w_zera_counter_play_time),
         .register_game_parameters(w_register_game_parameters),
         .reset_game_parameters(w_reset_game_parameters),
@@ -191,17 +211,17 @@ wire s_comeca_transmissao;
         .reset_eat_apple(w_reset_eat_apple),
 		.reset_value(w_reset_value),
         .recharge(w_recharge),
-        .comeca_transmissao(s_comeca_transmissao),
-        .fim_digito(s_fim_digito),
-        .fim_envio(s_fim_envio),
-        .conta_digito(s_conta_digito)
+        .inicio_transmissao(s_inicio_transmissao),
+        .medir(s_medir),
+        .fim_medida_dir(s_fim_medida_dir),
+        .fim_medida_esq(s_fim_medida_esq)
     );
 
 // Fluxo de dados da Saida Serial
 
-    Transmissao_Serial_FD SERIAL (
+    Transmissao_Serial_FD SERIAL_FD (
         .clock(clock),
-        .render_clr(w_render_clr),
+        .clr(s_clr),
         .comeca_transmissao(s_comeca_transmissao),
         .conta_digito(s_conta_digito),
         .db_apple(s_apple),
@@ -216,10 +236,22 @@ wire s_comeca_transmissao;
         .saida_serial(saida_serial)
     );
 
+    Transmissao_Serial_UC SERIAL_UC (
+        .clock(clock),
+        .clear(s_clr),
+		.restart(restart),
+        .inicio(s_inicio_transmissao),
+        .fim_digito(s_fim_digito),
+        .fim_envio(s_fim_envio), 
+        .db_state(s_estado_transmissao),
+        .conta_digito(s_conta_digito),
+        .comeca_transmissao(s_comeca_transmissao)
+    );
+
 // Displays da Placa Verilog
 
     hexa7seg HEX5(
-        .hexa({2'b00, s_estado[5:4]}), .display(db_state2)
+        .hexa({3'd0, s_estado_transmissao}), .display(db_state2)
     );
 
         hexa7seg HEX4(

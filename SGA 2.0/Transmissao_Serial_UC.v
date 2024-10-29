@@ -1,0 +1,91 @@
+//------------------------------------------------------------------
+// Arquivo   : SGA_UC.v
+// Projeto   : Snake Game Arcade
+//------------------------------------------------------------------
+// Descricao : Unidade de controle            
+//------------------------------------------------------------------
+// Revisoes  :
+//     Data        Versao  Autor                                          Descricao
+//     08/03/2024  1.0     Erick Sousa, João Basseti                    versao inicial
+//     13/03/2024  1.1     Erick Sousa, João Bassetti, Carlos Engler       Semana 2
+//------------------------------------------------------------------
+//
+
+module Transmissao_Serial_UC (
+    input      clock,
+	input      restart,
+    input      inicio, 
+    input      fim_digito,
+    input      fim_envio,
+    output reg [1:0] db_state,
+    output reg comeca_transmissao,
+    output reg conta_digito,
+    output reg clear
+);
+
+    parameter IDLE                      = 2'b00;  // 0
+    parameter TRANSMITE                 = 2'b01;  // 1
+    parameter ESPERA_TRANSMISSAO        = 2'b10;  // 2
+    parameter CONTA_CARACTERES          = 2'b11;  // 3
+
+    // Variaveis de estado
+    reg [1:0] Ecurrent, Enext;
+
+    reg clk;
+
+    parameter MAX_COUNT = 50000;
+
+    // Temporizador
+    
+    reg [31:0] count; 
+
+    always @(posedge clock or posedge restart) begin
+        if (restart) begin
+            count <= 32'd0; 
+            clk <= 1'b0;
+        end else begin
+            if (count < MAX_COUNT) begin
+                count <= count + 1'b1;
+                clk <= 1'b0;    
+            end else begin
+                clk <= 1'b1;
+            end
+        end
+    end
+
+    // Memoria de estado
+    always @(posedge clk or posedge restart) begin
+        if (restart)
+            Ecurrent <= IDLE;
+        else
+            Ecurrent <= Enext;
+    end
+
+    // Logica de proximo estado
+    always @* begin
+        case (Ecurrent)
+            IDLE:                   Enext = inicio ? TRANSMITE : IDLE;
+            TRANSMITE:              Enext = ESPERA_TRANSMISSAO;
+            ESPERA_TRANSMISSAO:     Enext = fim_digito ? CONTA_CARACTERES : ESPERA_TRANSMISSAO;
+            CONTA_CARACTERES:       Enext = fim_envio ? IDLE : TRANSMITE;
+            default:                Enext = IDLE;
+        endcase
+    end
+
+    // Logica de saida (maquina Moore)
+    always @* begin
+        comeca_transmissao          = (Ecurrent == TRANSMITE) ? 1'b1 : 1'b0;
+        conta_digito                = (Ecurrent == CONTA_CARACTERES) ? 1'b1 : 1'b0;
+        clear                       = (Ecurrent == IDLE) ? 1'b1 : 1'b0;
+        
+        // Saida de depuracao (estado)
+        case (Ecurrent)
+            IDLE                       : db_state = 2'b00;  // 0
+            TRANSMITE                  : db_state = 2'b01;  // 1
+            ESPERA_TRANSMISSAO         : db_state = 2'b10;  // 2
+            CONTA_CARACTERES           : db_state = 2'b11;  // 3
+            default                    : db_state = 2'b00;  // 0
+        endcase
+    end
+
+endmodule

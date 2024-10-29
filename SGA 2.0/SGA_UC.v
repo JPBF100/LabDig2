@@ -28,11 +28,10 @@ module SGA_UC (
     input      wall_collision,
     input      win_game,
     input      maca_na_cobra,
-    input      self_collision_on,
     input      self_collision,
 	input      end_wait_time,
-    input      fim_digito,
-    input      fim_envio,
+    input      fim_medida_dir,
+    input      fim_medida_esq,
     output reg load_size,
     output reg clear_size,
     output reg count_size,
@@ -65,8 +64,8 @@ module SGA_UC (
     output reg mux_ram_render,
 	output reg count_wait_time,
 	output reg reset_value,
-    output reg comeca_transmissao,
-    output reg conta_digito
+    output reg inicio_transmissao,
+    output reg medir
 );
 
     // Define estados
@@ -97,12 +96,12 @@ module SGA_UC (
     parameter COMPARAMACA               = 6'b011000;  // 18
     parameter CONTAMACA                 = 6'b011001;  // 19
     parameter ATUALIZA_MEMORIAMACA      = 6'b011010;  // 1A
-    parameter TRANSMITE                 = 6'b011011;  // 1B
+    parameter PREPARA_MEDIDA            = 6'b011011;  // 1B
 	parameter COMEU_MACA_ESPERA         = 6'b011100;  // 1C
     parameter GERA_MACA_NAO_RAN         = 6'b011101;  // 1D
     parameter CONTA_MACA_POS            = 6'b011110;  // 1E
-    parameter ESPERA_TRANSMISSAO        = 6'b011111;  // 1F
-    parameter CONTA_CARACTERES          = 6'b100000;  // 20
+    parameter AGUARDA_MEDIDA            = 6'b011111;  // 1F
+    // parameter CONTA_CARACTERES          = 6'b100000;  // 20
 
     // Variaveis de estado
     reg [5:0] Ecurrent, Enext;
@@ -121,22 +120,21 @@ module SGA_UC (
             IDLE:                   Enext = start ? PREPARA : IDLE;
             PREPARA:                Enext = GERA_MACA_INICIAL;
             GERA_MACA_INICIAL:      Enext = RENDERIZA;
-            RENDERIZA:              Enext = render_finish ? TRANSMITE : PROXIMO_RENDER;
+            RENDERIZA:              Enext = render_finish ? PREPARA_MEDIDA : PROXIMO_RENDER;
             PROXIMO_RENDER:         Enext = ATUALIZA_MEMORIA;
             ATUALIZA_MEMORIA:       Enext = RENDERIZA;
-            TRANSMITE:               Enext = ESPERA_TRANSMISSAO;
-            ESPERA_TRANSMISSAO:      Enext = fim_digito ? CONTA_CARACTERES : ESPERA_TRANSMISSAO;
-            CONTA_CARACTERES:        Enext = fim_envio ? ESPERA : TRANSMITE;
+            PREPARA_MEDIDA:         Enext = AGUARDA_MEDIDA;
+            AGUARDA_MEDIDA:         Enext = (fim_medida_dir & fim_medida_esq) ? ESPERA : AGUARDA_MEDIDA;
             ESPERA:                 Enext = pause ? PAUSOU : (chosen_play_time ? REGISTRA : ESPERA);
             REGISTRA:               Enext = COMPARA;
-            COMPARA:                Enext = !wall_collision ? (self_collision_on ? CONTASELF : VERIFICA_MACA) : PERDEU;
+            COMPARA:                Enext = !wall_collision ? CONTASELF : PERDEU;
             COMPARASELF:            Enext = !self_collision ? (render_finish ? VERIFICA_MACA : CONTASELF) : PERDEU;
             CONTASELF:              Enext = ATUALIZA_MEMORIASELF;
             ATUALIZA_MEMORIASELF:   Enext = COMPARASELF;
-		    VERIFICA_MACA:          Enext = !comeu_maca ? MOVE : (win_game ? GANHOU : CRESCE);
-		    COMEU_MACA_ESPERA:      Enext = end_wait_time ? GERA_MACA: COMEU_MACA_ESPERA;
-		    CRESCE:                 Enext = COMEU_MACA_ESPERA;
-		    GERA_MACA:              Enext = COMPARAMACA;
+            VERIFICA_MACA:          Enext = !comeu_maca ? MOVE : (win_game ? GANHOU : CRESCE);
+            COMEU_MACA_ESPERA:      Enext = end_wait_time ? GERA_MACA: COMEU_MACA_ESPERA;
+            CRESCE:                 Enext = COMEU_MACA_ESPERA;
+            GERA_MACA:              Enext = COMPARAMACA;
             COMPARAMACA:            Enext = maca_na_cobra ? GERA_MACA_NAO_RAN : (render_finish ? MOVE : CONTAMACA);
             CONTAMACA:              Enext = ATUALIZA_MEMORIAMACA;
             ATUALIZA_MEMORIAMACA:   Enext = COMPARAMACA;
@@ -173,7 +171,7 @@ module SGA_UC (
         won                         = (Ecurrent == GANHOU) ? 1'b1 : 1'b0;
         lost                        = (Ecurrent == PERDEU) ? 1'b1 : 1'b0;
         count_play_time             = (Ecurrent == ESPERA) ? 1'b1 : 1'b0;
-		count_wait_time             = (Ecurrent == COMEU_MACA_ESPERA) ? 1'b1 : 1'b0;
+        count_wait_time             = (Ecurrent == COMEU_MACA_ESPERA) ? 1'b1 : 1'b0;
         we_ram                      = (Ecurrent == WriteRAM|| Ecurrent == FEZ_NADA) ? 1'b1 : 1'b0;
         mux_ram                     = (Ecurrent == ContaRAM || Ecurrent == MOVE || Ecurrent == WriteRAM || Ecurrent == ComparaRAM) ? 1'b1 : 1'b0;
         load_ram                    = (Ecurrent == REGISTRA) ? 1'b1 : 1'b0;
@@ -183,12 +181,12 @@ module SGA_UC (
         zera_counter_play_time      = (Ecurrent == PAUSOU) ? 1'b1 : 1'b0;
         register_game_parameters    = (Ecurrent == PREPARA) ? 1'b1 : 1'b0;
         reset_game_parameters       = (Ecurrent == IDLE) ? 1'b1 : 1'b0;
-		reset_value                 = (Ecurrent == PERDEU || Ecurrent == GANHOU) ? 1'b1 : 1'b0;
+        reset_value                 = (Ecurrent == PERDEU || Ecurrent == GANHOU) ? 1'b1 : 1'b0;
         clr_apple_counter           = (Ecurrent == ESPERA) ? 1'b1 : 1'b0;
         mux_apple                   = (Ecurrent == GERA_MACA_NAO_RAN || Ecurrent == COMPARAMACA) ? 1'b1 : 1'b0;
         count_apple_counter         = (Ecurrent == CONTA_MACA_POS) ? 1'b1 : 1'b0;
-        comeca_transmissao          = (Ecurrent == TRANSMITE) ? 1'b1 : 1'b0;
-        conta_digito                = (Ecurrent == CONTA_CARACTERES) ? 1'b1 : 1'b0;
+        inicio_transmissao          = (Ecurrent == ESPERA || Ecurrent == PAUSOU || Ecurrent == GANHOU || Ecurrent == PERDEU) ? 1'b1 : 1'b0;
+        medir                       = (Ecurrent == PREPARA_MEDIDA) ? 1'b1 : 1'b0;
 
 
         // Mudança de Posição
@@ -234,12 +232,12 @@ module SGA_UC (
             COMPARAMACA                : db_state = 6'b011000;  // 18
             CONTAMACA                  : db_state = 6'b011001;  // 19
             ATUALIZA_MEMORIAMACA       : db_state = 6'b011010;  // 1A
-            TRANSMITE                  : db_state = 6'b011011;  // 1B
-			COMEU_MACA_ESPERA          : db_state = 6'b011100;  // 1C
+            // TRANSMITE                  : db_state = 6'b011011;  // 1B
+            COMEU_MACA_ESPERA          : db_state = 6'b011100;  // 1C
             GERA_MACA_NAO_RAN          : db_state = 6'b011101;  // 1D
             CONTA_MACA_POS             : db_state = 6'b011110;  // 1E
-            ESPERA_TRANSMISSAO         : db_state = 6'b011111;  // 1F
-            CONTA_CARACTERES           : db_state = 6'b100000;  // 20
+            // ESPERA_TRANSMISSAO         : db_state = 6'b011111;  // 1F
+            // CONTA_CARACTERES           : db_state = 6'b100000;  // 20
             default                    : db_state = 6'b000000;  // 00
         endcase
     end

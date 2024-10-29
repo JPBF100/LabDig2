@@ -1,7 +1,7 @@
   // Trasmissão Serial
  module Transmissao_Serial_FD (
     input clock,
-    input render_clr,
+    input clr,
     input comeca_transmissao,
     input conta_digito,
     input [5:0] db_head,
@@ -21,7 +21,7 @@
 
   tx_serial_7O1 SERIAL (
     .clock(clock),
-    .reset(render_clr),
+    .reset(clr),
     .partida(comeca_transmissao), 
     .dados_ascii(s_ascii),
     .saida_serial(saida_serial), 
@@ -35,7 +35,7 @@
 
   contador_163_3 CONTA_MUX (
     .clock(clock),
-    .clr(~render_clr),
+    .clr(~clr),
     .ld(1'b1),
     .ent(conta_digito),
     .enp(1'b1),
