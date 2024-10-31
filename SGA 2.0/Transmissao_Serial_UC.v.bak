@@ -17,25 +17,44 @@ module Transmissao_Serial_UC (
     input      inicio, 
     input      fim_digito,
     input      fim_envio,
-    input      fim_timeout,
-    output reg [2:0] db_state,
+    output reg [1:0] db_state,
     output reg comeca_transmissao,
     output reg conta_digito,
-    output reg clear,
-    output reg conta_timeout
+    output reg clear
 );
 
-    parameter IDLE                      = 3'b000;  // 0
-    parameter TRANSMITE                 = 3'b001;  // 1
-    parameter ESPERA_TRANSMISSAO        = 3'b010;  // 2
-    parameter CONTA_CARACTERES          = 3'b011;  // 3
-    parameter TIMEOUT                   = 3'b100;  // 4
+    parameter IDLE                      = 2'b00;  // 0
+    parameter TRANSMITE                 = 2'b01;  // 1
+    parameter ESPERA_TRANSMISSAO        = 2'b10;  // 2
+    parameter CONTA_CARACTERES          = 2'b11;  // 3
 
     // Variaveis de estado
-    reg [2:0] Ecurrent, Enext;
+    reg [1:0] Ecurrent, Enext;
+
+    reg clk;
+
+    parameter MAX_COUNT = 50000;
+
+    // Temporizador
+    
+    reg [31:0] count; 
+
+    always @(posedge clock or posedge restart) begin
+        if (restart) begin
+            count <= 32'd0; 
+            clk <= 1'b0;
+        end else begin
+            if (count == MAX_COUNT) begin
+                counter <= 16'b0;   
+                clk <= ~clk;    
+            end else begin
+                count <= count + 32'd1;  
+            end
+        end
+    end
 
     // Memoria de estado
-    always @(posedge clock or posedge restart) begin
+    always @(posedge clk or posedge restart) begin
         if (restart)
             Ecurrent <= IDLE;
         else
@@ -48,8 +67,7 @@ module Transmissao_Serial_UC (
             IDLE:                   Enext = inicio ? TRANSMITE : IDLE;
             TRANSMITE:              Enext = ESPERA_TRANSMISSAO;
             ESPERA_TRANSMISSAO:     Enext = fim_digito ? CONTA_CARACTERES : ESPERA_TRANSMISSAO;
-            CONTA_CARACTERES:       Enext = fim_envio ? TIMEOUT : TRANSMITE;
-            TIMEOUT:                Enext = fim_timeout ? IDLE : TIMEOUT;
+            CONTA_CARACTERES:       Enext = fim_envio ? IDLE : TRANSMITE;
             default:                Enext = IDLE;
         endcase
     end
@@ -59,16 +77,14 @@ module Transmissao_Serial_UC (
         comeca_transmissao          = (Ecurrent == TRANSMITE) ? 1'b1 : 1'b0;
         conta_digito                = (Ecurrent == CONTA_CARACTERES) ? 1'b1 : 1'b0;
         clear                       = (Ecurrent == IDLE) ? 1'b1 : 1'b0;
-        conta_timeout               = (Ecurrent == TIMEOUT) ? 1'b1 : 1'b0;
         
         // Saida de depuracao (estado)
         case (Ecurrent)
-            IDLE                       : db_state = 3'b000;  // 0
-            TRANSMITE                  : db_state = 3'b001;  // 1
-            ESPERA_TRANSMISSAO         : db_state = 3'b010;  // 2
-            CONTA_CARACTERES           : db_state = 3'b011;  // 3
-            TIMEOUT                    : db_state = 3'b100;  // 4
-            default                    : db_state = 3'b000;  // 0
+            IDLE                       : db_state = 2'b00;  // 0
+            TRANSMITE                  : db_state = 2'b01;  // 1
+            ESPERA_TRANSMISSAO         : db_state = 2'b10;  // 2
+            CONTA_CARACTERES           : db_state = 2'b11;  // 3
+            default                    : db_state = 2'b00;  // 0
         endcase
     end
 

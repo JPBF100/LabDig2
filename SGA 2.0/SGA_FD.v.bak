@@ -200,7 +200,7 @@ module SGA_FD (
       .meio   ()
     ); // Tempo que deixa o sinal comeu_maça ativo
 
-    contador_m #( .M(400000), .N(26) ) contador_interface (
+    contador_m #( .M(80000), .N(20) ) contador_interface (
       .clock  ( clock ),
       .zera_as( restart ),
       .zera_s (  ),
@@ -375,8 +375,8 @@ module SGA_FD (
 
     mux4x1_n #( .BITS(6) ) mux_zera (
       .D0(headXsoma),
-      .D1(headYSoma),
-      .D2(headXsubtrai),
+      .D1(headXsubtrai),
+      .D2(headYSoma),
       .D3(headYSubtrai),
       .SEL(direction),
       .OUT(newHead)

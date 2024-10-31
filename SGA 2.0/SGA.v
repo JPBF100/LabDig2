@@ -14,32 +14,32 @@
 
 
 module SGA (
-    input           clock,
-    input [3:0]     buttons,
-    input           start,
-    input           restart,
-    input           pause,
-    input           difficulty,
-    input           mode,
-    input           velocity,
-    input           echo_esq,
-    input           echo_dir,
-    output [5:0]    db_size, 
-    output [6:0]    db_state,
-    output [6:0]    db_state2,
-    output [6:0]    db_headX,
-    output [6:0]    db_headY,
-    output [6:0]    db_appleX,
-    output [6:0]    db_appleY,
-    output [1:0]    direction,
-    output          won,
-    output          lost,
-    output          dir,
-    output          esq,
-    output wire     saida_serial,
-    output		    comeu_maca,
-    output wire     trigger_esq,
-    output wire     trigger_dir   
+    input               clock,
+    input [3:0]         buttons,
+    input               start,
+    input               restart,
+    input               pause,
+    input               difficulty,
+    input               mode,
+    input               velocity,
+    input               echo_esq,
+    input               echo_dir,
+    output [5:0]        db_size, 
+    output [6:0]        db_state,
+    output [6:0]        db_state2,
+    output [6:0]        db_headX,
+    output [6:0]        db_headY,
+    output [6:0]        db_appleX,
+    output [6:0]        db_appleY,
+    output [1:0]        direction,
+    output              won,
+    output              lost,
+    output              dir,
+    output              esq,
+    output wire         saida_serial,
+    output		        comeu_maca,
+    output wire         trigger_esq,
+    output wire         trigger_dir   
 );
 
 wire w_clr_size;
@@ -59,7 +59,6 @@ wire w_played;
 wire [1:0] w_direction;
 wire w_we_ram;
 wire w_mux_ram;
-wire w_recharge;
 wire w_wall_collision;
 wire w_win_game;
 wire w_maca_na_cobra;
@@ -98,8 +97,18 @@ wire s_clr;
 wire s_fim_medida_dir;
 wire s_fim_medida_esq;
 wire s_medir;
+wire s_reset_interface;
 
-// Circuito Principal
+wire s_conta_timeout;
+wire s_timeout_transmissao;
+wire s_dir;
+wire s_esq;
+wire s_libera_alarme;
+
+wire s_conta_inter;
+wire s_fim_inter;
+
+// Circuito Principal----------------------------------
 
 	SGA_FD FD(
         .clock(clock),
@@ -148,7 +157,6 @@ wire s_medir;
         .register_game_parameters(w_register_game_parameters),
         .reset_game_parameters(w_reset_game_parameters),
         .maca_na_cobra(w_maca_na_cobra),
-        .recharge(w_recharge),
         .medir(s_medir),
         .fim_medida_dir(s_fim_medida_dir),
         .fim_medida_esq(s_fim_medida_esq),
@@ -156,8 +164,12 @@ wire s_medir;
         .echo_dir(echo_dir),
         .trigger_esq(trigger_esq),
         .trigger_dir(trigger_dir),
-        .dir(dir),
-        .esq(esq)
+        .dir(s_dir),
+        .esq(s_esq),
+        .reset_interface(s_reset_interface),
+        .libera_alarme(s_libera_alarme),
+        .conta_inter(s_conta_inter),
+        .fim_inter(s_fim_inter)
     );
 
 	SGA_UC UC(
@@ -210,14 +222,18 @@ wire s_medir;
         .register_eat_apple(w_register_eat_apple),
         .reset_eat_apple(w_reset_eat_apple),
 		.reset_value(w_reset_value),
-        .recharge(w_recharge),
         .inicio_transmissao(s_inicio_transmissao),
         .medir(s_medir),
         .fim_medida_dir(s_fim_medida_dir),
-        .fim_medida_esq(s_fim_medida_esq)
+        .fim_medida_esq(s_fim_medida_esq),
+        .reset_interface(s_reset_interface),
+        .interface_direction({~buttons[3], ~buttons[2]}),
+        .libera_alarme(s_libera_alarme),
+        .conta_inter(s_conta_inter),
+        .fim_inter(s_fim_inter)
     );
 
-// Fluxo de dados da Saida Serial
+// Fluxo de dados da Saida Serial--------------------------
 
     Transmissao_Serial_FD SERIAL_FD (
         .clock(clock),
@@ -233,7 +249,9 @@ wire s_medir;
         .difficulty_out(difficulty),
         .fim_digito(s_fim_digito),
         .fim_envio(s_fim_envio),
-        .saida_serial(saida_serial)
+        .saida_serial(saida_serial),
+        .conta_timeout(s_conta_timeout),
+        .fim_timeout(s_timeout_transmissao)
     );
 
     Transmissao_Serial_UC SERIAL_UC (
@@ -245,13 +263,15 @@ wire s_medir;
         .fim_envio(s_fim_envio), 
         .db_state(s_estado_transmissao),
         .conta_digito(s_conta_digito),
-        .comeca_transmissao(s_comeca_transmissao)
+        .comeca_transmissao(s_comeca_transmissao),
+        .conta_timeout(s_conta_timeout),
+        .fim_timeout(s_timeout_transmissao)
     );
 
-// Displays da Placa Verilog
+// Displays HEX ------------------------------------
 
     hexa7seg HEX5(
-        .hexa({3'd0, s_estado_transmissao}), .display(db_state2)
+        .hexa({1'd0, s_estado_transmissao}), .display(db_state2)
     );
 
         hexa7seg HEX4(
@@ -274,7 +294,11 @@ wire s_medir;
         .hexa({1'b0, s_head[5:3]}), .display(db_headY)
     );
 
+// Depuração -------------------------------------
+
     assign direction = w_direction;
     assign comeu_maca = w_comeu_maca_esp;
+    assign dir = s_dir;
+    assign esq = s_esq;
 
 endmodule

@@ -11,7 +11,7 @@
     input mode_out,
     input velocity_out,
     input difficulty_out,
-    input conta_timeout,
+    input comeca_timeout,
     output fim_digito,
     output fim_envio,
     output saida_serial,
@@ -53,7 +53,7 @@
     .clock  ( clock ),
     .zera_as( ),
     .zera_s ( clear ),
-    .conta  ( conta_timeout ),
+    .conta  ( comeca_timeout ),
     .Q      (  ),
     .fim    ( fim_timeout ),
     .meio   (  )
