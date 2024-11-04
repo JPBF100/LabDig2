@@ -14,7 +14,6 @@
 
 module SGA_FD (
     input         clock,
-    input [3:0]   buttons,
     input         restart,
     input         clear_size,
     input         count_size,
@@ -49,7 +48,6 @@ module SGA_FD (
     input         echo_esq,
     input         echo_dir,
     input         reset_interface,
-    input         libera_alarme,
     input         conta_inter,
     output        self_collision,
     output        render_finish,
@@ -60,13 +58,10 @@ module SGA_FD (
     output        end_move,
 	  output        end_wait_time,
     output        chosen_difficulty,
-    output        played,
     output        wall_collision,
     output        maca_na_cobra,
 	  output        comeu_maca,
     output        comeu_maca_esp,
-    output        fim_medida_esq,
-    output        fim_medida_dir,
     output        dir,
     output        esq,
     output        fim_inter,
@@ -114,7 +109,7 @@ module SGA_FD (
 //--------------------------------------------------------------------------------
 
 // Modos de Jogo e Direção ----------------------------------
-    assign sinal = buttons[0] | buttons [1] | buttons[2] | buttons [3];  // Lê entrada do botão
+
     assign chosen_play_time = !w_velocity ? w_end_play_time : w_end_play_time_half; // Define tempo total do jogo
     assign chosen_difficulty = w_dificuldade ? w_win_game : w_win_easy_game; // Define a dificuldade do jogo
 
@@ -261,15 +256,6 @@ module SGA_FD (
         .D ( velocity ),
         .Q ( w_velocity )
     ); // Muda a velocidade do jogo
- 
-// Inputa o Botão-------------------------------
-
-    edge_detector detector (
-      .clock( clock ),
-      .reset( restart ),
-      .sinal( sinal ),
-      .pulso( played )
-    ); // Edge para os botões
 	 
 // Comparadores -------------------------------------------------------------------------------
 
@@ -391,7 +377,7 @@ module SGA_FD (
         .echo     ( echo_esq ),
         .trigger  ( trigger_esq ),
         .medida   ( s_medida_esq ),
-        .pronto   ( fim_medida_esq ),
+        .pronto   (  ),
         .db_estado(  ) // pode usar como debug
     );
     
@@ -402,14 +388,13 @@ module SGA_FD (
         .echo     ( echo_dir ),
         .trigger  ( trigger_dir ),
         .medida   ( s_medida_dir ),
-        .pronto   ( fim_medida_dir ),
+        .pronto   (  ),
         .db_estado(  ) // pode usar como debug
     );
 
     comparador_proximidade PROX (
       .medida_esq( s_medida_esq ),
       .medida_dir( s_medida_dir ),
-      .libera_alarme( libera_alarme ),
       .dir( dir ),
       .esq( esq )
     );

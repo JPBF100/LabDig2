@@ -15,6 +15,7 @@
 
 module SGA (
     input               clock,
+    input [3:0]         buttons,
     input               start,
     input               restart,
     input               pause,
@@ -102,6 +103,7 @@ wire s_conta_timeout;
 wire s_timeout_transmissao;
 wire s_dir;
 wire s_esq;
+wire s_libera_alarme;
 
 wire s_conta_inter;
 wire s_fim_inter;
@@ -110,6 +112,7 @@ wire s_fim_inter;
 
 	SGA_FD FD(
         .clock(clock),
+        .buttons(buttons),
         .restart(restart | w_reset_value),
         .mode(mode),
         .difficulty(difficulty),
@@ -129,7 +132,7 @@ wire s_fim_inter;
         .register_head(w_register_head),
         .reset_head(w_reset_head),
         .db_tamanho(db_size),
-		  .count_wait_time(w_count_wait_time),
+		.count_wait_time(w_count_wait_time),
         .load_size(w_load_size),
         .db_apple(s_apple),
         .db_head(s_head),
@@ -137,14 +140,14 @@ wire s_fim_inter;
         .we_ram(w_we_ram),
         .mux_ram(w_mux_ram),
         .chosen_play_time(w_chosen_play_time),
-		  .end_wait_time(w_end_wait_time),
+		.end_wait_time(w_end_wait_time),
         .direction(w_direction),
         .load_ram(w_load_ram),
         .counter_ram(w_counter_ram),
         .mux_ram_addres(w_mux_ram_addres),
         .mux_ram_render(w_mux_ram_render),
         .end_move(w_end_move),
-		  .comeu_maca(w_comeu_maca),
+		.comeu_maca(w_comeu_maca),
         .comeu_maca_esp(w_comeu_maca_esp),
         .wall_collision(w_wall_collision),
         .self_collision(w_self_collision),
@@ -161,6 +164,7 @@ wire s_fim_inter;
         .dir(s_dir),
         .esq(s_esq),
         .reset_interface(s_reset_interface),
+        .libera_alarme(s_libera_alarme),
         .conta_inter(s_conta_inter),
         .fim_inter(s_fim_inter)
     );
@@ -185,21 +189,25 @@ wire s_fim_inter;
         .count_apple_counter(w_count_apple_counter),
         .won(won),
         .we_ram(w_we_ram),
-		  .count_wait_time(w_count_wait_time),
+		.count_wait_time(w_count_wait_time),
         .mux_ram(w_mux_ram),
         .lost(lost), 
         .load_size(w_load_size),
         .count_play_time(w_count_play_time),
         .db_state(s_estado),
+        .left(~buttons[3]), // Tá negado pois botões na FPGA
+        .right(~buttons[0]), // Tá negado pois botões na FPGA
+        .up(~buttons[2]), // Tá negado pois botões na FPGA
+        .down(~buttons[1]), // Tá negado pois botões na FPGA
         .direction(w_direction),
-		  .end_wait_time(w_end_wait_time),
+		.end_wait_time(w_end_wait_time),
         .load_ram(w_load_ram),
         .counter_ram(w_counter_ram),
         .mux_ram_addres(w_mux_ram_addres),
         .mux_ram_render(w_mux_ram_render),
         .end_move(w_end_move),
         .wall_collision(w_wall_collision),
-		  .comeu_maca(w_comeu_maca),
+		.comeu_maca(w_comeu_maca),
         .self_collision(w_self_collision),
         .win_game(w_win_game),
         .pause(pause),
@@ -209,11 +217,12 @@ wire s_fim_inter;
         .maca_na_cobra(w_maca_na_cobra),
         .register_eat_apple(w_register_eat_apple),
         .reset_eat_apple(w_reset_eat_apple),
-		  .reset_value(w_reset_value),
+		.reset_value(w_reset_value),
         .inicio_transmissao(s_inicio_transmissao),
         .medir(s_medir),
         .reset_interface(s_reset_interface),
-        .interface_direction({s_dir, s_esq}),
+        .interface_direction({~buttons[3], ~buttons[2]}),
+        .libera_alarme(s_libera_alarme),
         .conta_inter(s_conta_inter),
         .fim_inter(s_fim_inter)
     );
