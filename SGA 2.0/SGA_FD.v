@@ -8,7 +8,8 @@
  * Revisoes  :
  *     Data        Versao  Autor                                          Descricao
  *     09/03/2024  1.0     Erick Sousa, João Bassetti                   versao inicial
- *     13/03/2024  1.1     Erick Sousa, João Bassetti, Carlos Engler       Semana 2
+ *     13/03/2024  1.1     Erick Sousa, João Bassetti, Carlos Engler       Semana 2 labdigi1
+ *     04/03/2024  2.3     Erick Sousa, João Bassetti, Carlos Engler       Semana 3 labdigi2
  * --------------------------------------------------------------------
 */
 
@@ -72,6 +73,10 @@ module SGA_FD (
 
     // Fiação
 
+    // 26 bits
+    wire [25:0] w_chosen_velocity;
+    wire [25:0] w_actual_velocity;
+
     // 12 bits
     wire [11:0] s_medida_esq;
     wire [11:0] s_medida_dir;
@@ -111,7 +116,7 @@ module SGA_FD (
 
 // Modos de Jogo e Direção ----------------------------------
 
-    assign chosen_play_time = !w_velocity ? w_end_play_time : w_end_play_time_half; // Define tempo total do jogo
+    assign chosen_play_time = w_velocity; // Define tempo total do jogo
     assign chosen_difficulty = w_dificuldade ? w_win_game : w_win_easy_game; // Define a dificuldade do jogo
 
 // Contadores -------------------------------------------------------
@@ -183,9 +188,9 @@ module SGA_FD (
       .zera_as( restart ),
       .zera_s ( render_count | zera_counter_play_time ),
       .conta  ( count_play_time ),
-      .Q      (  ),
-      .fim    ( w_end_play_time ),
-      .meio   ( w_end_play_time_half )
+      .Q      ( w_actual_velocity ),
+      .fim    (  ),
+      .meio   (  )
     ); // Tempo de uma rodada
 	 
 	  contador_m #( .M(2000), .N(20) ) contador_de_comeu_maca (
@@ -318,7 +323,18 @@ module SGA_FD (
       .ALBo( ), 
       .AGBo( ),
       .AEBo( self_collision )
-    ); // // Deteca se a cobra está dentro da cobra
+    ); // // Deteca se a posicao da cabeca da cobra coincide com a posicao de algum segmento do corpo
+
+    comparador_85_n #( .N(26) ) comparador_velocidade (
+      .A   ( w_chosen_velocity ),
+      .B   ( w_actual_velocity ),
+      .ALBi( 1'b0 ), 
+      .AGBi( 1'b0 ),
+      .AEBi( 1'b1 ),
+      .ALBo( ), 
+      .AGBo( ),
+      .AEBo( chosen_play_time )
+    ); // Detecta se ja foi esperado o tempo necessario de acordo com a velocidade escolhida 
 
 // Deteca colisão com a parede ------------------------------------------------------
 
@@ -371,6 +387,21 @@ module SGA_FD (
       .SEL(direction),
       .OUT(newHead)
     );
+
+// Define a velocidade da cobra -------------------------------------------------
+
+    mux8x1_n #( .BITS(26) ) mux_velocidade (
+      .D0(26'b10011000100101101000000000), // 40E+6
+      .D1(26'b10001101001001001101000000), // 37E+6
+      .D2(26'b10000101100000111011000000), // 35E+6
+      .D3(26'b01111010000100100000000000), // 32E+6
+      .D4(26'b01101010110011111100000000), // 28E+6 
+      .D5(26'b01011111010111100001000000), // 25E+6
+      .D6(26'b01010111101111001111000000), // 23E+6
+      .D7(26'b01001100010010110100000000), // 20E+6
+      .SEL((s_appleposition >= 6'd8) ? 3'b111 : s_appleposition[2:0]),
+      .OUT(w_chosen_velocity)
+    ); // Define a velocidade da cobra a partir do numero de macas comidas (s_appleposition NAO eh posicao da maca)
 
 // Sensor echo ---------------------------------------------
     

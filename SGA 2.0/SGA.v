@@ -189,21 +189,21 @@ wire s_fim_inter;
         .count_apple_counter(w_count_apple_counter),
         .won(won),
         .we_ram(w_we_ram),
-		  .count_wait_time(w_count_wait_time),
+		.count_wait_time(w_count_wait_time),
         .mux_ram(w_mux_ram),
         .lost(lost), 
         .load_size(w_load_size),
         .count_play_time(w_count_play_time),
         .db_state(s_estado),
         .direction(w_direction),
-		  .end_wait_time(w_end_wait_time),
+		.end_wait_time(w_end_wait_time),
         .load_ram(w_load_ram),
         .counter_ram(w_counter_ram),
         .mux_ram_addres(w_mux_ram_addres),
         .mux_ram_render(w_mux_ram_render),
         .end_move(w_end_move),
         .wall_collision(w_wall_collision),
-		  .comeu_maca(w_comeu_maca),
+		.comeu_maca(w_comeu_maca),
         .self_collision(w_self_collision),
         .win_game(w_win_game),
         .pause(pause),
@@ -213,7 +213,7 @@ wire s_fim_inter;
         .maca_na_cobra(w_maca_na_cobra),
         .register_eat_apple(w_register_eat_apple),
         .reset_eat_apple(w_reset_eat_apple),
-		  .reset_value(w_reset_value),
+		.reset_value(w_reset_value),
         .inicio_transmissao(s_inicio_transmissao),
         .medir(s_medir),
         .reset_interface(s_reset_interface),
@@ -222,7 +222,7 @@ wire s_fim_inter;
         .fim_inter(s_fim_inter)
     );
 
-// Fluxo de dados da Saida Serial--------------------------
+// Saida Serial--------------------------
 
     Transmissao_Serial_FD SERIAL_FD (
         .clock(clock),
@@ -257,15 +257,15 @@ wire s_fim_inter;
         .fim_timeout(s_timeout_transmissao)
     );
 
-// Fluxo de dados PWM ------------------------------------
+// PWM por multiplicador para ativacao do velocimetro (servomotor) ------------------------------------
 
-    circuito_pwm #(
+    circuito_multiplicador_pwm #(
         .conf_periodo(1000000),  // Período do sinal PWM [1000000 => 20ms)]
-        .valor_inicial  (50000)  // Valor inicial da largura do pulso [50000 => 1ms]
+        .valor_inicial(50000)  // Valor inicial da largura do pulso [50000 => 1ms]
         ) PWM (
         .clock   (clock),
         .reset   (reset),
-        .largura (s_apple_number),
+        .largura ((s_apple_number >= 6'd7) ? 3'b110 : s_apple_number[2:0]),
         .pwm     (saida_pwm)
     );
 
