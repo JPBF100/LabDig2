@@ -18,7 +18,7 @@ module circuito_multiplicador_pwm #(    // valores default
     ) (
     input        clock,
     input        reset,
-    input  [2:0] largura,
+    input  [3:0] largura,
     output reg   pwm
 );
 
@@ -30,7 +30,7 @@ always @(posedge clock or posedge reset) begin
     end else begin
 
         // Saída PWM
-        pwm <= (contagem < ((largura + 3'b001) * valor_inicial)); // Soma um para evitar que o pulso seja zero
+        pwm <= (contagem < ((largura + 4'b0001) * valor_inicial)); // Soma um para evitar que o pulso seja zero
 
         if (contagem == conf_periodo - 1) begin
             contagem <= 0;

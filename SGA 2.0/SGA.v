@@ -266,7 +266,7 @@ wire s_fim_inter;
         ) PWM (
         .clock   (clock),
         .reset   (reset),
-        .largura ((s_apple_number >= 6'd7) ? 3'b110 : s_apple_number[2:0]),
+        .largura (s_apple_number[3:0]),
         .pwm     (saida_pwm)
     );
 
