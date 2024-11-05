@@ -111,12 +111,13 @@ module SGA_FD (
     wire w_mode;
     wire w_velocity;
     wire w_wall_collision;
+    wire w_reached_velocity;
 
 //--------------------------------------------------------------------------------
 
 // Modos de Jogo e Direção ----------------------------------
 
-    assign chosen_play_time = w_velocity; // Define tempo total do jogo
+    assign chosen_play_time = w_velocity ? w_reached_velocity : w_end_play_time; // Define tempo total do jogo
     assign chosen_difficulty = w_dificuldade ? w_win_game : w_win_easy_game; // Define a dificuldade do jogo
 
 // Contadores -------------------------------------------------------
@@ -189,8 +190,8 @@ module SGA_FD (
       .zera_s ( render_count | zera_counter_play_time ),
       .conta  ( count_play_time ),
       .Q      ( w_actual_velocity ),
-      .fim    (  ),
-      .meio   (  )
+      .fim    ( w_end_play_time ),
+      .meio   ( )
     ); // Tempo de uma rodada
 	 
 	  contador_m #( .M(2000), .N(20) ) contador_de_comeu_maca (
@@ -333,7 +334,7 @@ module SGA_FD (
       .AEBi( 1'b1 ),
       .ALBo( ), 
       .AGBo( ),
-      .AEBo( chosen_play_time )
+      .AEBo( w_reached_velocity )
     ); // Detecta se ja foi esperado o tempo necessario de acordo com a velocidade escolhida 
 
 // Deteca colisão com a parede ------------------------------------------------------
