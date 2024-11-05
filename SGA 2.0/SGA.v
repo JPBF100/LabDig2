@@ -6,9 +6,10 @@
  *
  * --------------------------------------------------------------------
  * Revisoes  :
- *     Data        Versao  Autor                                          Descricao
- *     08/03/2024  1.0     Erick Sousa, João Bassetti                   versao inicial
- *     13/03/2024  1.0     Erick Sousa, João Bassetti, Carlos Engler    Semana 2
+ *     Data        Versao  Autor                                        Descricao
+ *     09/03/2024  1.0     Erick Sousa, João Bassetti                   versao inicial
+ *     13/03/2024  1.1     Erick Sousa, João Bassetti, Carlos Engler    Semana 2 labdigi1
+ *     04/03/2024  2.3     Erick Sousa, João Bassetti, Carlos Engler    Semana 3 labdigi2
  * --------------------------------------------------------------------
 */
 
