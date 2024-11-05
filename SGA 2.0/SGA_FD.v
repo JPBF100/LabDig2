@@ -67,6 +67,7 @@ module SGA_FD (
     output        fim_inter,
     output wire   trigger_esq,
     output wire   trigger_dir   
+    output wire [5:0]   apples_eaten;
 );
 
     // Fiação
@@ -159,6 +160,8 @@ module SGA_FD (
       .zero_rco ()
     ); // Quantidade de maças comidas
 
+    assign apples_eaten = s_appleposition;
+    
     contador_163_n #( .N(6) ) ram_counter (
       .clock    ( clock ),
       .clr      ( 1'b1 ), 
@@ -216,6 +219,7 @@ module SGA_FD (
         .D ( w_new_apple ),
         .Q ( s_apple )
     ); // Posição da Maça
+
 
     registrador_n #( .N(6) ) head_position (
         .clock ( clock ),

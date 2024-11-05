@@ -38,7 +38,8 @@ module SGA (
     output wire         saida_serial,
     output		        comeu_maca,
     output wire         trigger_esq,
-    output wire         trigger_dir   
+    output wire         trigger_dir,   
+    output wire         saida_pwm
 );
 
 wire w_clr_size;
@@ -65,6 +66,8 @@ wire w_maca_na_cobra;
 wire [5:0] s_estado;
 wire [5:0] s_apple;
 wire [5:0] s_head;
+
+wire [5:0] s_apple_number;
 
 wire w_load_ram;
 wire w_counter_ram;
@@ -162,7 +165,8 @@ wire s_fim_inter;
         .esq(s_esq),
         .reset_interface(s_reset_interface),
         .conta_inter(s_conta_inter),
-        .fim_inter(s_fim_inter)
+        .fim_inter(s_fim_inter),
+        .apples_eaten(s_apple_number)
     );
 
 	SGA_UC UC(
@@ -251,6 +255,18 @@ wire s_fim_inter;
         .comeca_transmissao(s_comeca_transmissao),
         .conta_timeout(s_conta_timeout),
         .fim_timeout(s_timeout_transmissao)
+    );
+
+// Fluxo de dados PWM ------------------------------------
+
+    circuito_pwm #(
+        .conf_periodo(1000000),  // Período do sinal PWM [1000000 => 20ms)]
+        .valor_inicial  (50000)  // Valor inicial da largura do pulso [50000 => 1ms]
+        ) PWM (
+        .clock   (clock),
+        .reset   (reset),
+        .largura (s_apple_number),
+        .pwm     (saida_pwm)
     );
 
 // Displays HEX ------------------------------------
