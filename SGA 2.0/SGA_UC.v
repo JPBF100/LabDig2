@@ -67,7 +67,8 @@ module SGA_UC (
     output reg          medir,
     output reg          reset_interface,
     output reg          libera_alarme,
-    output reg          conta_inter
+    output reg          conta_inter,
+    output reg          enable_interface
 );
 
     // Define estados
@@ -87,7 +88,7 @@ module SGA_UC (
     parameter PERDEU                    = 6'b001101;  // D
     parameter GANHOU                    = 6'b001110;  // E
     parameter MUDA_DIRECAO              = 6'b001111;  // F
-    // parameter ATUALIZA_MEMORIA          = 6'b010000;  // 10
+    parameter REGISTRA_DIRECAO          = 6'b010000;  // 10
     parameter CONTA_RAM                 = 6'b010001;  // 11
     parameter WRITE_RAM                 = 6'b010010;  // 12
     parameter COMPARA_RAM               = 6'b010011;  // 13
@@ -127,9 +128,10 @@ module SGA_UC (
             // PROXIMO_RENDER:         Enext = ATUALIZA_MEMORIA;
             // ATUALIZA_MEMORIA:       Enext = RENDERIZA;
             PREPARA_MEDIDA:         Enext = AGUARDA_MEDIDA;
-            AGUARDA_MEDIDA:         Enext = fim_inter ? MUDA_DIRECAO : AGUARDA_MEDIDA;
-            MUDA_DIRECAO:           Enext = ESPERA;
-            ESPERA:                 Enext = pause ? PAUSOU : (chosen_play_time ? REGISTRA : ESPERA);
+            AGUARDA_MEDIDA:         Enext = fim_inter ? REGISTRA_DIRECAO : AGUARDA_MEDIDA;
+				REGISTRA_DIRECAO:       Enext = ESPERA;
+            ESPERA:                 Enext = pause ? PAUSOU : (chosen_play_time ? MUDA_DIRECAO : ESPERA);
+				MUDA_DIRECAO:           Enext = REGISTRA;
             REGISTRA:               Enext = COMPARA;
             COMPARA:                Enext = !wall_collision ? CONTA_SELF : PERDEU;
             COMPARA_SELF:           Enext = !self_collision ? (render_finish ? VERIFICA_MACA : CONTA_SELF) : PERDEU;
@@ -191,6 +193,7 @@ module SGA_UC (
         medir                       = (Ecurrent == PREPARA_MEDIDA) ? 1'b1 : 1'b0;
         reset_interface             = (Ecurrent == INICIO_JOGADA) ? 1'b1 : 1'b0;
         conta_inter                 = (Ecurrent == AGUARDA_MEDIDA) ? 1'b1 : 1'b0;
+        enable_interface            = (Ecurrent == REGISTRA_DIRECAO) ? 1'b1 : 1'b0;
 
 
         // Mudança de Posição
@@ -199,21 +202,23 @@ module SGA_UC (
         // Cima 11
         // Baixo 01
         // interface direction = {dir, esq}
+		  
         if (restart) begin 
-		  flag = 1'b0;
-        direction <= 2'b00;                    
+          direction = 2'b00;                    
         end else begin
-                if (Ecurrent == MUDA_DIRECAO && flag == 1'b0) begin
-                    if (interface_direction == 2'b10) begin  direction <= direction - 2'd1; end
-                    if (interface_direction == 2'b01) begin  direction <= direction + 2'd1; end
-                    if (interface_direction == 2'b00 || interface_direction == 2'b11) begin direction <= direction; end
-                flag = 1'b1;
-					 end  
+                if (Ecurrent == MUDA_DIRECAO) begin
+						  case (interface_direction)
+						     2'b00: direction = direction;
+							  2'b11: direction = direction;
+							  2'b01: direction = direction + 2'd1;
+							  2'b10: direction = direction - 2'd1;
+							  default: direction = direction;
+						  endcase   
+					 end else begin
+						  direction = direction; 
             end
-        
-		  if (Ecurrent == ) begin
-		  flag = 1'b0;
-		  end
+			end
+		  
         // Saida de depuracao (estado)
         case (Ecurrent)
             IDLE                       : db_state = 6'b000000;  // 00
@@ -232,7 +237,7 @@ module SGA_UC (
             PERDEU                     : db_state = 6'b001101;  // 0D
             GANHOU                     : db_state = 6'b001110;  // 0E
             MUDA_DIRECAO               : db_state = 6'b001111;  // 0F
-            // ATUALIZA_MEMORIA           : db_state = 6'b010000;  // 10
+            REGISTRA_DIRECAO           : db_state = 6'b010000;  // 10
             CONTA_RAM                  : db_state = 6'b010001;  // 11
             WRITE_RAM                  : db_state = 6'b010010;  // 12
             COMPARA_RAM                : db_state = 6'b010011;  // 13
@@ -254,13 +259,3 @@ module SGA_UC (
     end
 
 endmodule
-
-
-				  //if (left && direction != 2'b00 && Ecurrent != PAUSOU)  
-				//		direction <= 2'b10; // Esquerda
-				  //if (right && direction != 2'b10 && Ecurrent != PAUSOU)  
-				//		direction <= 2'b00; //Direita
-				  //if (up && direction != 2'b11 && Ecurrent != PAUSOU)     
-				//		direction <= 2'b01; // Cima                    
-				  //if (down && direction != 2'b01 && Ecurrent != PAUSOU)     
-				//		direction <= 2'b11; // Baixo

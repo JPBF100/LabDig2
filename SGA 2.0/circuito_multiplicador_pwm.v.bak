@@ -30,7 +30,7 @@ always @(posedge clock or posedge reset) begin
     end else begin
 
         // Saída PWM
-        pwm <= (contagem < ((largura - 4'b0001) * valor_inicial / 5'd16 + valor_inicial)); // Soma um para evitar que o pulso seja zero
+        pwm <= (contagem < ((largura + 4'b0001) * valor_inicial)); // Soma um para evitar que o pulso seja zero
 
         if (contagem == conf_periodo - 1) begin
             contagem <= 0;

@@ -40,7 +40,8 @@ module SGA (
     output		        comeu_maca,
     output wire         trigger_esq,
     output wire         trigger_dir,   
-    output wire         saida_pwm
+    output wire         saida_pwm,
+	 output wire         db_pwm
 );
 
 wire w_clr_size;
@@ -109,6 +110,8 @@ wire s_esq;
 
 wire s_conta_inter;
 wire s_fim_inter;
+wire s_enable_interface;
+wire s_pwm;
 
 // Circuito Principal----------------------------------
 
@@ -167,7 +170,8 @@ wire s_fim_inter;
         .reset_interface(s_reset_interface),
         .conta_inter(s_conta_inter),
         .fim_inter(s_fim_inter),
-        .apples_eaten(s_apple_number)
+        .apples_eaten(s_apple_number),
+        .enable_interface(s_enable_interface)
     );
 
 	SGA_UC UC(
@@ -220,7 +224,8 @@ wire s_fim_inter;
         .reset_interface(s_reset_interface),
         .interface_direction({s_dir, s_esq}),
         .conta_inter(s_conta_inter),
-        .fim_inter(s_fim_inter)
+        .fim_inter(s_fim_inter),
+        .enable_interface(s_enable_interface)
     );
 
 // Saida Serial--------------------------
@@ -267,7 +272,7 @@ wire s_fim_inter;
         .clock   (clock),
         .reset   (reset),
         .largura (s_apple_number[3:0]),
-        .pwm     (saida_pwm)
+        .pwm     (s_pwm)
     );
 
 // Displays HEX ------------------------------------
@@ -302,5 +307,7 @@ wire s_fim_inter;
     assign comeu_maca = w_comeu_maca_esp;
     assign dir = s_dir;
     assign esq = s_esq;
+	 assign saida_pwm = s_pwm;
+	 assign db_pwm = s_pwm;
 
 endmodule
