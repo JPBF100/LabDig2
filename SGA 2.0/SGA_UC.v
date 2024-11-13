@@ -47,7 +47,6 @@ module SGA_UC (
     output reg          lost, 
     output reg          count_play_time,
     output reg [5:0]    db_state,
-    output reg [1:0]    direction,
     output reg          we_ram,
     output reg          mux_ram,
     output reg          recharge,
@@ -68,7 +67,8 @@ module SGA_UC (
     output reg          reset_interface,
     output reg          libera_alarme,
     output reg          conta_inter,
-    output reg          enable_interface
+    output reg          enable_interface,
+    output reg          counter_direction
 );
 
     // Define estados
@@ -129,9 +129,9 @@ module SGA_UC (
             // ATUALIZA_MEMORIA:       Enext = RENDERIZA;
             PREPARA_MEDIDA:         Enext = AGUARDA_MEDIDA;
             AGUARDA_MEDIDA:         Enext = fim_inter ? REGISTRA_DIRECAO : AGUARDA_MEDIDA;
-				REGISTRA_DIRECAO:       Enext = ESPERA;
+            REGISTRA_DIRECAO:       Enext = ESPERA;
+            MUDA_DIRECAO:           Enext = REGISTRA;
             ESPERA:                 Enext = pause ? PAUSOU : (chosen_play_time ? MUDA_DIRECAO : ESPERA);
-				MUDA_DIRECAO:           Enext = REGISTRA;
             REGISTRA:               Enext = COMPARA;
             COMPARA:                Enext = !wall_collision ? CONTA_SELF : PERDEU;
             COMPARA_SELF:           Enext = !self_collision ? (render_finish ? VERIFICA_MACA : CONTA_SELF) : PERDEU;
@@ -194,6 +194,7 @@ module SGA_UC (
         reset_interface             = (Ecurrent == INICIO_JOGADA) ? 1'b1 : 1'b0;
         conta_inter                 = (Ecurrent == AGUARDA_MEDIDA) ? 1'b1 : 1'b0;
         enable_interface            = (Ecurrent == REGISTRA_DIRECAO) ? 1'b1 : 1'b0;
+        counter_direction           = (Ecurrent == MUDA_DIRECAO)  ? 1'b1 : 1'b0;
 
 
         // Mudança de Posição
@@ -202,22 +203,6 @@ module SGA_UC (
         // Cima 11
         // Baixo 01
         // interface direction = {dir, esq}
-		  
-        if (restart) begin 
-          direction = 2'b00;                    
-        end else begin
-                if (Ecurrent == MUDA_DIRECAO) begin
-						  case (interface_direction)
-						     2'b00: direction = direction;
-							  2'b11: direction = direction;
-							  2'b01: direction = direction + 2'd1;
-							  2'b10: direction = direction - 2'd1;
-							  default: direction = direction;
-						  endcase   
-					 end else begin
-						  direction = direction; 
-            end
-			end
 		  
         // Saida de depuracao (estado)
         case (Ecurrent)

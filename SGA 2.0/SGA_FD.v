@@ -169,7 +169,7 @@ module SGA_FD (
       .rco      (),
       .half_rco (),
       .zero_rco ()
-    ); // Quantidade de maças comidas
+    ); // Posição da maçã gerada não-aleatóriamente
 
     assign apples_eaten = s_size;
     

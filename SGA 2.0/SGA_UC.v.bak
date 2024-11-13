@@ -12,60 +12,63 @@
 //
 
 module SGA_UC (
-    input      clock,
-    input      restart, 
-    input      start,
-    input      pause,
-    input      chosen_play_time,
-    input      render_finish,
-    input      left,
-    input      right,
-    input      up,
-    input      down,
-    input      played,
-    input      end_move,
-	input      comeu_maca,
-    input      wall_collision,
-    input      win_game,
-    input      maca_na_cobra,
-    input      self_collision,
-	input      end_wait_time,
-    input      fim_medida_dir,
-    input      fim_medida_esq,
-    output reg load_size,
-    output reg clear_size,
-    output reg count_size,
-    output reg render_clr,
-    output reg render_count,
-    output reg register_apple,
-    output reg reset_apple,
-    output reg register_eat_apple,
-    output reg reset_eat_apple,
-    output reg register_head,
-    output reg reset_head,
-    output reg finished,
-    output reg won,
-    output reg lost, 
-    output reg count_play_time,
-    output reg [5:0] db_state,
-    output reg [1:0] direction,
-    output reg we_ram,
-    output reg mux_ram,
-    output reg recharge,
-    output reg clr_apple_counter,
-    output reg mux_apple,
-    output reg count_apple_counter,
-    output reg load_ram,
-    output reg counter_ram,
-    output reg mux_ram_addres,
-    output reg zera_counter_play_time,
-    output reg register_game_parameters,
-    output reg reset_game_parameters,
-    output reg mux_ram_render,
-	output reg count_wait_time,
-	output reg reset_value,
-    output reg inicio_transmissao,
-    output reg medir
+    input               clock,
+    input               restart, 
+    input               start,
+    input               pause,
+    input               chosen_play_time,
+    input               render_finish,
+    input               left,
+    input               right,
+    input               up,
+    input               down,
+    input               end_move,
+	input               comeu_maca,
+    input               wall_collision,
+    input               win_game,
+    input               maca_na_cobra,
+    input               self_collision,
+	input               end_wait_time,
+    input [1:0]         interface_direction,
+    input               fim_inter,
+    output reg          load_size,
+    output reg          clear_size,
+    output reg          count_size,
+    output reg          render_clr,
+    output reg          render_count,
+    output reg          register_apple,
+    output reg          reset_apple,
+    output reg          register_eat_apple,
+    output reg          reset_eat_apple,
+    output reg          register_head,
+    output reg          reset_head,
+    output reg          finished,
+    output reg          won,
+    output reg          lost, 
+    output reg          count_play_time,
+    output reg [5:0]    db_state,
+    output reg [1:0]    direction,
+    output reg          we_ram,
+    output reg          mux_ram,
+    output reg          recharge,
+    output reg          clr_apple_counter,
+    output reg          mux_apple,
+    output reg          count_apple_counter,
+    output reg          load_ram,
+    output reg          counter_ram,
+    output reg          mux_ram_addres,
+    output reg          zera_counter_play_time,
+    output reg          register_game_parameters,
+    output reg          reset_game_parameters,
+    output reg          mux_ram_render,
+	output reg          count_wait_time,
+	output reg          reset_value,
+    output reg          inicio_transmissao,
+    output reg          medir,
+    output reg          reset_interface,
+    output reg          libera_alarme,
+    output reg          conta_inter,
+    output reg          enable_interface
 );
 
     // Define estados
@@ -84,8 +87,8 @@ module SGA_UC (
     parameter SALVA_CABECA              = 6'b001100;  // C
     parameter PERDEU                    = 6'b001101;  // D
     parameter GANHOU                    = 6'b001110;  // E
-    // parameter PROXIMO_RENDER            = 6'b001111;  // F
-    // parameter ATUALIZA_MEMORIA          = 6'b010000;  // 10
+    parameter MUDA_DIRECAO              = 6'b001111;  // F
+    parameter REGISTRA_DIRECAO          = 6'b010000;  // 10
     parameter CONTA_RAM                 = 6'b010001;  // 11
     parameter WRITE_RAM                 = 6'b010010;  // 12
     parameter COMPARA_RAM               = 6'b010011;  // 13
@@ -105,6 +108,7 @@ module SGA_UC (
 
     // Variaveis de estado
     reg [5:0] Ecurrent, Enext;
+	 reg flag;
 
     // Memoria de estado
     always @(posedge clock or posedge restart) begin
@@ -124,8 +128,10 @@ module SGA_UC (
             // PROXIMO_RENDER:         Enext = ATUALIZA_MEMORIA;
             // ATUALIZA_MEMORIA:       Enext = RENDERIZA;
             PREPARA_MEDIDA:         Enext = AGUARDA_MEDIDA;
-            AGUARDA_MEDIDA:         Enext = (fim_medida_dir & fim_medida_esq) ? ESPERA : AGUARDA_MEDIDA;
-            ESPERA:                 Enext = pause ? PAUSOU : (chosen_play_time ? REGISTRA : ESPERA);
+            AGUARDA_MEDIDA:         Enext = fim_inter ? REGISTRA_DIRECAO : AGUARDA_MEDIDA;
+				REGISTRA_DIRECAO:       Enext = ESPERA;
+            ESPERA:                 Enext = pause ? PAUSOU : (chosen_play_time ? MUDA_DIRECAO : ESPERA);
+				MUDA_DIRECAO:           Enext = REGISTRA;
             REGISTRA:               Enext = COMPARA;
             COMPARA:                Enext = !wall_collision ? CONTA_SELF : PERDEU;
             COMPARA_SELF:           Enext = !self_collision ? (render_finish ? VERIFICA_MACA : CONTA_SELF) : PERDEU;
@@ -183,28 +189,36 @@ module SGA_UC (
         clr_apple_counter           = (Ecurrent == ESPERA) ? 1'b1 : 1'b0;
         mux_apple                   = (Ecurrent == GERA_MACA_NAO_RAN || Ecurrent == COMPARA_MACA) ? 1'b1 : 1'b0;
         count_apple_counter         = (Ecurrent == CONTA_MACA_POS) ? 1'b1 : 1'b0;
-        inicio_transmissao          = (Ecurrent == ESPERA || Ecurrent == PAUSOU || Ecurrent == GANHOU || Ecurrent == PERDEU) ? 1'b1 : 1'b0;
+        inicio_transmissao          = (Ecurrent == ESPERA || Ecurrent == PAUSOU || Ecurrent == GANHOU || Ecurrent == PERDEU || Ecurrent == IDLE) ? 1'b1 : 1'b0;
         medir                       = (Ecurrent == PREPARA_MEDIDA) ? 1'b1 : 1'b0;
+        reset_interface             = (Ecurrent == INICIO_JOGADA) ? 1'b1 : 1'b0;
+        conta_inter                 = (Ecurrent == AGUARDA_MEDIDA) ? 1'b1 : 1'b0;
+        enable_interface            = (Ecurrent == REGISTRA_DIRECAO) ? 1'b1 : 1'b0;
 
 
         // Mudança de Posição
-        // Direita
-        // Esquerda
-        //
-        //
-        if (restart) begin                      
-        direction <= 2'b00;                    
+        // Direita 00
+        // Esquerda 10 
+        // Cima 11
+        // Baixo 01
+        // interface direction = {dir, esq}
+		  
+        if (restart) begin 
+          direction = 2'b00;                    
         end else begin
-				  if (left && direction != 2'b00 && Ecurrent != PAUSOU)  
-						direction <= 2'b01;
-				  if (right && direction != 2'b01 && Ecurrent != PAUSOU)  
-						direction <= 2'b00;
-				  if (up && direction != 2'b10 && Ecurrent != PAUSOU)     
-						direction <= 2'b11;                     
-				  if (down && direction != 2'b11 && Ecurrent != PAUSOU)     
-						direction <= 2'b10;                   
-				end
-        
+                if (Ecurrent == MUDA_DIRECAO) begin
+						  case (interface_direction)
+						     2'b00: direction = direction;
+							  2'b11: direction = direction;
+							  2'b01: direction = direction + 2'd1;
+							  2'b10: direction = direction - 2'd1;
+							  default: direction = direction;
+						  endcase   
+					 end else begin
+						  direction = direction; 
+            end
+			end
+		  
         // Saida de depuracao (estado)
         case (Ecurrent)
             IDLE                       : db_state = 6'b000000;  // 00
@@ -222,8 +236,8 @@ module SGA_UC (
             SALVA_CABECA               : db_state = 6'b001100;  // 0C
             PERDEU                     : db_state = 6'b001101;  // 0D
             GANHOU                     : db_state = 6'b001110;  // 0E
-            // PROXIMO_RENDER             : db_state = 6'b001111;  // 0F
-            // ATUALIZA_MEMORIA           : db_state = 6'b010000;  // 10
+            MUDA_DIRECAO               : db_state = 6'b001111;  // 0F
+            REGISTRA_DIRECAO           : db_state = 6'b010000;  // 10
             CONTA_RAM                  : db_state = 6'b010001;  // 11
             WRITE_RAM                  : db_state = 6'b010010;  // 12
             COMPARA_RAM                : db_state = 6'b010011;  // 13

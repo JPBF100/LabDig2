@@ -6,16 +6,16 @@
  *
  * --------------------------------------------------------------------
  * Revisoes  :
- *     Data        Versao  Autor                                          Descricao
- *     08/03/2024  1.0     Erick Sousa, João Bassetti                   versao inicial
- *     13/03/2024  1.0     Erick Sousa, João Bassetti, Carlos Engler    Semana 2
+ *     Data        Versao  Autor                                        Descricao
+ *     09/03/2024  1.0     Erick Sousa, João Bassetti                   versao inicial
+ *     13/03/2024  1.1     Erick Sousa, João Bassetti, Carlos Engler    Semana 2 labdigi1
+ *     04/03/2024  2.3     Erick Sousa, João Bassetti, Carlos Engler    Semana 3 labdigi2
  * --------------------------------------------------------------------
 */
 
 
 module SGA (
     input               clock,
-    input [3:0]         buttons,
     input               start,
     input               restart,
     input               pause,
@@ -39,7 +39,9 @@ module SGA (
     output wire         saida_serial,
     output		        comeu_maca,
     output wire         trigger_esq,
-    output wire         trigger_dir   
+    output wire         trigger_dir,   
+    output wire         saida_pwm,
+	 output wire         db_pwm
 );
 
 wire w_clr_size;
@@ -66,6 +68,8 @@ wire w_maca_na_cobra;
 wire [5:0] s_estado;
 wire [5:0] s_apple;
 wire [5:0] s_head;
+
+wire [5:0] s_apple_number;
 
 wire w_load_ram;
 wire w_counter_ram;
@@ -103,16 +107,16 @@ wire s_conta_timeout;
 wire s_timeout_transmissao;
 wire s_dir;
 wire s_esq;
-wire s_libera_alarme;
 
 wire s_conta_inter;
 wire s_fim_inter;
+wire s_enable_interface;
+wire s_pwm;
 
 // Circuito Principal----------------------------------
 
 	SGA_FD FD(
         .clock(clock),
-        .buttons(buttons),
         .restart(restart | w_reset_value),
         .mode(mode),
         .difficulty(difficulty),
@@ -132,7 +136,7 @@ wire s_fim_inter;
         .register_head(w_register_head),
         .reset_head(w_reset_head),
         .db_tamanho(db_size),
-		.count_wait_time(w_count_wait_time),
+		  .count_wait_time(w_count_wait_time),
         .load_size(w_load_size),
         .db_apple(s_apple),
         .db_head(s_head),
@@ -140,14 +144,14 @@ wire s_fim_inter;
         .we_ram(w_we_ram),
         .mux_ram(w_mux_ram),
         .chosen_play_time(w_chosen_play_time),
-		.end_wait_time(w_end_wait_time),
+		  .end_wait_time(w_end_wait_time),
         .direction(w_direction),
         .load_ram(w_load_ram),
         .counter_ram(w_counter_ram),
         .mux_ram_addres(w_mux_ram_addres),
         .mux_ram_render(w_mux_ram_render),
         .end_move(w_end_move),
-		.comeu_maca(w_comeu_maca),
+		  .comeu_maca(w_comeu_maca),
         .comeu_maca_esp(w_comeu_maca_esp),
         .wall_collision(w_wall_collision),
         .self_collision(w_self_collision),
@@ -164,9 +168,10 @@ wire s_fim_inter;
         .dir(s_dir),
         .esq(s_esq),
         .reset_interface(s_reset_interface),
-        .libera_alarme(s_libera_alarme),
         .conta_inter(s_conta_inter),
-        .fim_inter(s_fim_inter)
+        .fim_inter(s_fim_inter),
+        .apples_eaten(s_apple_number),
+        .enable_interface(s_enable_interface)
     );
 
 	SGA_UC UC(
@@ -195,10 +200,6 @@ wire s_fim_inter;
         .load_size(w_load_size),
         .count_play_time(w_count_play_time),
         .db_state(s_estado),
-        .left(~buttons[3]), // Tá negado pois botões na FPGA
-        .right(~buttons[0]), // Tá negado pois botões na FPGA
-        .up(~buttons[2]), // Tá negado pois botões na FPGA
-        .down(~buttons[1]), // Tá negado pois botões na FPGA
         .direction(w_direction),
 		.end_wait_time(w_end_wait_time),
         .load_ram(w_load_ram),
@@ -221,13 +222,13 @@ wire s_fim_inter;
         .inicio_transmissao(s_inicio_transmissao),
         .medir(s_medir),
         .reset_interface(s_reset_interface),
-        .interface_direction({~buttons[3], ~buttons[2]}),
-        .libera_alarme(s_libera_alarme),
+        .interface_direction({s_dir, s_esq}),
         .conta_inter(s_conta_inter),
-        .fim_inter(s_fim_inter)
+        .fim_inter(s_fim_inter),
+        .enable_interface(s_enable_interface)
     );
 
-// Fluxo de dados da Saida Serial--------------------------
+// Saida Serial--------------------------
 
     Transmissao_Serial_FD SERIAL_FD (
         .clock(clock),
@@ -262,6 +263,18 @@ wire s_fim_inter;
         .fim_timeout(s_timeout_transmissao)
     );
 
+// PWM por multiplicador para ativacao do velocimetro (servomotor) ------------------------------------
+
+    circuito_multiplicador_pwm #(
+        .conf_periodo(1000000),  // Período do sinal PWM [1000000 => 20ms)]
+        .valor_inicial(50000)  // Valor inicial da largura do pulso [50000 => 1ms]
+        ) PWM (
+        .clock   (clock),
+        .reset   (reset),
+        .largura (s_apple_number[3:0]),
+        .pwm     (s_pwm)
+    );
+
 // Displays HEX ------------------------------------
 
     hexa7seg HEX5(
@@ -294,5 +307,7 @@ wire s_fim_inter;
     assign comeu_maca = w_comeu_maca_esp;
     assign dir = s_dir;
     assign esq = s_esq;
+	 assign saida_pwm = s_pwm;
+	 assign db_pwm = s_pwm;
 
 endmodule

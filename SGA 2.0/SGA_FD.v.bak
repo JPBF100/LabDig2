@@ -6,15 +6,15 @@
  *
  * --------------------------------------------------------------------
  * Revisoes  :
- *     Data        Versao  Autor                                          Descricao
+ *     Data        Versao  Autor                                        Descricao
  *     09/03/2024  1.0     Erick Sousa, João Bassetti                   versao inicial
- *     13/03/2024  1.1     Erick Sousa, João Bassetti, Carlos Engler       Semana 2
+ *     13/03/2024  1.1     Erick Sousa, João Bassetti, Carlos Engler    Semana 2 labdigi1
+ *     04/03/2024  2.3     Erick Sousa, João Bassetti, Carlos Engler    Semana 3 labdigi2
  * --------------------------------------------------------------------
 */
 
 module SGA_FD (
     input         clock,
-    input [3:0]   buttons,
     input         restart,
     input         clear_size,
     input         count_size,
@@ -49,8 +49,8 @@ module SGA_FD (
     input         echo_esq,
     input         echo_dir,
     input         reset_interface,
-    input         libera_alarme,
     input         conta_inter,
+    input         enable_interface,
     output        self_collision,
     output        render_finish,
     output [5:0]  db_tamanho,
@@ -60,21 +60,23 @@ module SGA_FD (
     output        end_move,
 	  output        end_wait_time,
     output        chosen_difficulty,
-    output        played,
     output        wall_collision,
     output        maca_na_cobra,
 	  output        comeu_maca,
     output        comeu_maca_esp,
-    output        fim_medida_esq,
-    output        fim_medida_dir,
     output        dir,
     output        esq,
     output        fim_inter,
     output wire   trigger_esq,
-    output wire   trigger_dir   
+    output wire   trigger_dir,
+    output wire [5:0] apples_eaten
 );
 
     // Fiação
+
+    // 26 bits
+    wire [25:0] w_chosen_velocity;
+    wire [25:0] w_actual_velocity;
 
     // 12 bits
     wire [11:0] s_medida_esq;
@@ -110,12 +112,17 @@ module SGA_FD (
     wire w_mode;
     wire w_velocity;
     wire w_wall_collision;
+    wire w_reached_velocity;
+    wire w_reached_velocity_equal;
+    wire w_reached_velocity_lower;
+    wire s_fim_interface_esq;
+    wire s_fim_interface_dir;
 
 //--------------------------------------------------------------------------------
 
 // Modos de Jogo e Direção ----------------------------------
-    assign sinal = buttons[0] | buttons [1] | buttons[2] | buttons [3];  // Lê entrada do botão
-    assign chosen_play_time = !w_velocity ? w_end_play_time : w_end_play_time_half; // Define tempo total do jogo
+
+    assign chosen_play_time = w_velocity ? w_reached_velocity : w_end_play_time; // Define tempo total do jogo
     assign chosen_difficulty = w_dificuldade ? w_win_game : w_win_easy_game; // Define a dificuldade do jogo
 
 // Contadores -------------------------------------------------------
@@ -164,6 +171,8 @@ module SGA_FD (
       .zero_rco ()
     ); // Quantidade de maças comidas
 
+    assign apples_eaten = s_size;
+    
     contador_163_n #( .N(6) ) ram_counter (
       .clock    ( clock ),
       .clr      ( 1'b1 ), 
@@ -185,9 +194,9 @@ module SGA_FD (
       .zera_as( restart ),
       .zera_s ( render_count | zera_counter_play_time ),
       .conta  ( count_play_time ),
-      .Q      (  ),
+      .Q      ( w_actual_velocity ),
       .fim    ( w_end_play_time ),
-      .meio   ( w_end_play_time_half )
+      .meio   ( )
     ); // Tempo de uma rodada
 	 
 	  contador_m #( .M(2000), .N(20) ) contador_de_comeu_maca (
@@ -197,16 +206,6 @@ module SGA_FD (
       .conta  ( count_wait_time ),
       .Q      (  ),
       .fim    ( end_wait_time ),
-      .meio   ()
-    ); // Tempo que deixa o sinal comeu_maça ativo
-
-    contador_m #( .M(80000), .N(20) ) contador_interface (
-      .clock  ( clock ),
-      .zera_as( restart ),
-      .zera_s (  ),
-      .conta  ( conta_inter ),
-      .Q      (  ),
-      .fim    ( fim_inter ),
       .meio   ()
     ); // Tempo que deixa o sinal comeu_maça ativo
 
@@ -221,6 +220,7 @@ module SGA_FD (
         .D ( w_new_apple ),
         .Q ( s_apple )
     ); // Posição da Maça
+
 
     registrador_n #( .N(6) ) head_position (
         .clock ( clock ),
@@ -261,15 +261,6 @@ module SGA_FD (
         .D ( velocity ),
         .Q ( w_velocity )
     ); // Muda a velocidade do jogo
- 
-// Inputa o Botão-------------------------------
-
-    edge_detector detector (
-      .clock( clock ),
-      .reset( restart ),
-      .sinal( sinal ),
-      .pulso( played )
-    ); // Edge para os botões
 	 
 // Comparadores -------------------------------------------------------------------------------
 
@@ -328,7 +319,20 @@ module SGA_FD (
       .ALBo( ), 
       .AGBo( ),
       .AEBo( self_collision )
-    ); // // Deteca se a cobra está dentro da cobra
+    ); // // Deteca se a posicao da cabeca da cobra coincide com a posicao de algum segmento do corpo
+
+    comparador_85_n #( .N(26) ) comparador_velocidade (
+      .A   ( w_chosen_velocity ),
+      .B   ( w_actual_velocity ),
+      .ALBi( 1'b1 ), 
+      .AGBi( 1'b0 ),
+      .AEBi( 1'b1 ),
+      .ALBo( w_reached_velocity_lower ), 
+      .AGBo( ),
+      .AEBo( w_reached_velocity_equal )
+    ); // Detecta se ja foi esperado o tempo necessario de acordo com a velocidade escolhida 
+
+  assign w_reached_velocity = w_reached_velocity_equal | w_reached_velocity_lower;
 
 // Deteca colisão com a parede ------------------------------------------------------
 
@@ -375,44 +379,97 @@ module SGA_FD (
 
     mux4x1_n #( .BITS(6) ) mux_zera (
       .D0(headXsoma),
-      .D1(headXsubtrai),
-      .D2(headYSoma),
+      .D1(headYSoma),
+      .D2(headXsubtrai),
       .D3(headYSubtrai),
       .SEL(direction),
       .OUT(newHead)
     );
 
-// Sensor echo ---------------------------------------------
-    
-    interface_hcsr04 INTESQ (
-        .clock    (clock),
-        .reset    ( restart | reset_interface ),
-        .medir    ( medir ),
-        .echo     ( echo_esq ),
-        .trigger  ( trigger_esq ),
-        .medida   ( s_medida_esq ),
-        .pronto   ( fim_medida_esq ),
-        .db_estado(  ) // pode usar como debug
-    );
-    
-    interface_hcsr04 INTDIR (
-        .clock    ( clock ),
-        .reset    ( restart | reset_interface ),
-        .medir    ( medir ),
-        .echo     ( echo_dir ),
-        .trigger  ( trigger_dir ),
-        .medida   ( s_medida_dir ),
-        .pronto   ( fim_medida_dir ),
-        .db_estado(  ) // pode usar como debug
-    );
+// Define a velocidade da cobra -------------------------------------------------
 
-    comparador_proximidade PROX (
-      .medida_esq( s_medida_esq ),
-      .medida_dir( s_medida_dir ),
-      .libera_alarme( libera_alarme ),
-      .dir( dir ),
-      .esq( esq )
-    );
+    mux_16x1_n #( .BITS(26) ) mux_velocidade (
+      .D0 (26'd40000000), // 40.0E+6 -> 0.8s
+      .D1 (26'd20000000), // 38.5E+6 -> 0.77s
+      .D2 (26'd37000000), // 37.0E+6 -> 0.74s
+      .D3 (26'd35500000), // 35.5E+6 -> 0.71s
+      .D4 (26'd34000000), // 34.0E+6 -> 0.68s
+      .D5 (26'd32500000), // 32.5E+6 -> 0.65s
+      .D6 (26'd31000000), // 31.0E+6 -> 0.62s
+      .D8 (26'd29500000), // 29.5E+6 -> 0.59s
+      .D7 (26'd28000000), // 28.0E+6 -> 0.56s
+      .D9 (26'd26500000), // 26.5E+6 -> 0.53s
+      .D10(26'd25000000), // 25.0E+6 -> 0.5s
+      .D11(26'd23500000), // 23.5E+6 -> 0.47s
+      .D12(26'd22000000), // 22.0E+6 -> 0.44s
+      .D13(26'd20000000), // 20.0E+6 -> 0.4s
+      .D14(26'd20000000), // 20.0E+6 -> 0.4s
+      .D15(26'd20000000), // 20.0E+6 -> 0.4s
+      .SEL(s_size[3:0]),
+      .MUX_OUT(w_chosen_velocity)
+    ); // Define a velocidade da cobra a partir do numero de macas comidas (s_appleposition NAO eh posicao da maca)
+
+// Sensor echo ---------------------------------------------
+
+  wire s_interface_dir;
+  wire s_interface_esq;
+
+      contador_m #( .M(400000), .N(26) ) contador_interface (
+      .clock  ( clock ),
+      .zera_as( restart ),
+      .zera_s (  ),
+      .conta  ( conta_inter ),
+      .Q      (  ),
+      .fim    ( fim_inter ),
+      .meio   ()
+    ); // Tempo que deixa o sinal comeu_maça ativo
+    
+  interface_hcsr04 INTESQ (
+      .clock    (clock),
+      .reset    ( restart | reset_interface ),
+      .medir    ( medir ),
+      .echo     ( echo_esq ),
+      .trigger  ( trigger_esq ),
+      .medida   ( s_medida_esq ),
+      .pronto   ( s_fim_interface_esq ),
+      .db_estado(  ) // pode usar como debug
+  );
+  
+  interface_hcsr04 INTDIR (
+      .clock    ( clock ),
+      .reset    ( restart | reset_interface ),
+      .medir    ( medir ),
+      .echo     ( echo_dir ),
+      .trigger  ( trigger_dir ),
+      .medida   ( s_medida_dir ),
+      .pronto   ( s_fim_interface_dir ),
+      .db_estado(  ) // pode usar como debug
+  );
+
+  // assign fim_inter = s_fim_interface_esq & s_fim_interface_dir;
+
+  comparador_proximidade PROX (
+    .medida_esq( s_medida_esq ),
+    .medida_dir( s_medida_dir ),
+    .dir( s_interface_dir ),
+    .esq( s_interface_esq )
+  );
+
+  registrador_n #( .N(1) ) interface_dir (
+      .clock ( clock ),
+      .clear ( reset_interface ),
+      .enable ( enable_interface  ),
+      .D ( s_interface_dir ),
+      .Q ( dir )
+  ); // Posição da Maça
+
+      registrador_n #( .N(1) ) interface_esq (
+      .clock ( clock ),
+      .clear ( reset_interface ),
+      .enable ( enable_interface ),
+      .D ( s_interface_esq ),
+      .Q ( esq )
+  ); // Posição da Maça
 
 // Depuração -----------------------------------------------------
 

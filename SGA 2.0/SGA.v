@@ -24,6 +24,8 @@ module SGA (
     input               velocity,
     input               echo_esq,
     input               echo_dir,
+    input               botao_esq,
+    input               botao_dir,
     output [5:0]        db_size, 
     output [6:0]        db_state,
     output [6:0]        db_state2,
@@ -31,7 +33,6 @@ module SGA (
     output [6:0]        db_headY,
     output [6:0]        db_appleX,
     output [6:0]        db_appleY,
-    output [1:0]        direction,
     output              won,
     output              lost,
     output              dir,
@@ -41,7 +42,11 @@ module SGA (
     output wire         trigger_esq,
     output wire         trigger_dir,   
     output wire         saida_pwm,
-	 output wire         db_pwm
+	 output wire         db_pwm,
+	 output wire         db_esq_reg,
+	 output wire         db_dir_reg,
+     output [1:0]         db_interface_direction,
+     output [1:0]         db_direction
 );
 
 wire w_clr_size;
@@ -112,6 +117,9 @@ wire s_conta_inter;
 wire s_fim_inter;
 wire s_enable_interface;
 wire s_pwm;
+wire w_counter_direction;
+
+assign db_interface_direction = {s_dir, s_esq};
 
 // Circuito Principal----------------------------------
 
@@ -145,7 +153,7 @@ wire s_pwm;
         .mux_ram(w_mux_ram),
         .chosen_play_time(w_chosen_play_time),
 		  .end_wait_time(w_end_wait_time),
-        .direction(w_direction),
+        .counter_direction(w_counter_direction),
         .load_ram(w_load_ram),
         .counter_ram(w_counter_ram),
         .mux_ram_addres(w_mux_ram_addres),
@@ -171,7 +179,12 @@ wire s_pwm;
         .conta_inter(s_conta_inter),
         .fim_inter(s_fim_inter),
         .apples_eaten(s_apple_number),
-        .enable_interface(s_enable_interface)
+        .enable_interface(s_enable_interface),
+		  .db_esq_reg(db_esq_reg),
+		  .db_dir_reg(db_dir_reg),
+        .botao_esq(botao_esq),
+        .botao_dir(botao_dir),
+        .db_direction(db_direction)
     );
 
 	SGA_UC UC(
@@ -200,7 +213,7 @@ wire s_pwm;
         .load_size(w_load_size),
         .count_play_time(w_count_play_time),
         .db_state(s_estado),
-        .direction(w_direction),
+         .counter_direction(w_counter_direction),
 		.end_wait_time(w_end_wait_time),
         .load_ram(w_load_ram),
         .counter_ram(w_counter_ram),
