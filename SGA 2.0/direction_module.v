@@ -1,10 +1,11 @@
-module wall_coliser (
+module wall_coliser
+  (
    input          clock,
    input          [5:0] head,
    input          [1:0] direction,
    input          reset,
    output reg     colide
- );
+  );
 
     // parameter          LEFT  = 2'b10,
     // parameter          UP    = 2'b11,

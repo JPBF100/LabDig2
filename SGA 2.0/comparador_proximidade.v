@@ -7,22 +7,22 @@ module comparador_proximidade (
 
     comparador_85_n #( .N(12) ) comparador_prox_esq (
       .A   ( medida_esq ),
-      .B   ( 12'h010 ),
+      .B   ( 4'd10 ),
       .ALBi( 1'b0 ), 
       .AGBi( 1'b0 ),
       .AEBi( 1'b1 ),
-      .ALBo( dir ), 
+      .ALBo( esq ), 
       .AGBo( ),
       .AEBo( )
     );
 
     comparador_85_n #( .N(12) ) comparador_prox_dir (
       .A   ( medida_dir ),
-      .B   ( 12'h010 ),
+      .B   ( 4'd10 ),
       .ALBi( 1'b0 ), 
       .AGBi( 1'b0 ),
       .AEBi( 1'b1 ),
-      .ALBo( esq ), 
+      .ALBo( dir ), 
       .AGBo( ),
       .AEBo( )
     );
